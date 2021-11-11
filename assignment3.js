@@ -147,7 +147,13 @@ export class Assignment3 extends Scene {
         // Mat4.scale(x/2, y/2, z/2), because each "unit" cube is 2x2x2
         
         let time_seconds = program_state.animation_time / 1000;
-        let limb_rotation = Math.PI / 6 * Math.sin(time_seconds * 2 * Math.PI);
+
+        let animation_speed = 3;
+
+        if(time_seconds > 20)
+            animation_speed = 6;
+
+        let limb_rotation = Math.PI / 6 * Math.sin(time_seconds * animation_speed * Math.PI);
 
         let player_head_mat = player_model_transform;
         player_head_mat = player_head_mat.times(Mat4.scale(1.25, 1.25, 1.25));
@@ -170,6 +176,8 @@ export class Assignment3 extends Scene {
         let player_right_arm_mat = player_model_transform;
         player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(1, -1.25, 0));
         player_right_arm_mat = player_right_arm_mat.times(Mat4.rotation(Math.PI / 48.0, 0, 0, 1));
+        if (this.player_y == 0)
+            player_right_arm_mat = player_right_arm_mat.times(Mat4.rotation(-1 * limb_rotation, 1, 0, 0));
         player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(0.5, -1.5, 0));
         player_right_arm_mat = player_right_arm_mat.times(Mat4.scale(0.5, 1.5, 0.5));
         this.shapes.player_right_arm.draw(context, program_state, player_right_arm_mat, this.materials.player);
@@ -177,6 +185,8 @@ export class Assignment3 extends Scene {
         let player_left_leg_mat = player_model_transform;
         player_left_leg_mat = player_left_leg_mat.times(Mat4.translation(0, -4.25, 0));
         player_left_leg_mat = player_left_leg_mat.times(Mat4.rotation(Math.PI / 192.0 * (-1), 0, 0, 1));
+        if (this.player_y == 0)
+            player_left_leg_mat = player_left_leg_mat.times(Mat4.rotation(-1 * limb_rotation, 1, 0, 0));
         player_left_leg_mat = player_left_leg_mat.times(Mat4.translation(-0.5, -1.5, 0));
         player_left_leg_mat = player_left_leg_mat.times(Mat4.scale(0.5, 1.5, 0.5));
         this.shapes.player_left_leg.draw(context, program_state, player_left_leg_mat, this.materials.player);
@@ -184,6 +194,8 @@ export class Assignment3 extends Scene {
         let player_right_leg_mat = player_model_transform;
         player_right_leg_mat = player_right_leg_mat.times(Mat4.translation(0, -4.25, 0));
         player_right_leg_mat = player_right_leg_mat.times(Mat4.rotation(Math.PI / 192.0, 0, 0, 1));
+        if (this.player_y == 0)
+            player_right_leg_mat = player_right_leg_mat.times(Mat4.rotation(limb_rotation, 1, 0, 0));
         player_right_leg_mat = player_right_leg_mat.times(Mat4.translation(0.5, -1.5, 0));
         player_right_leg_mat = player_right_leg_mat.times(Mat4.scale(0.5, 1.5, 0.5));
         this.shapes.player_right_leg.draw(context, program_state, player_right_leg_mat, this.materials.player);
