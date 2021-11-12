@@ -59,10 +59,10 @@ export class Assignment3 extends Scene {
 
         this.y_vel = 0;
         this.y_accel = 0;
-    }
 
-    test_func() {
-        this.player_y = 7;
+        this.down_pressed = false;
+
+        this.frames = 0;
     }
 
     jump() {
@@ -72,25 +72,21 @@ export class Assignment3 extends Scene {
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
+        this.key_triggered_button("Move Left", ["ArrowLeft"], () => this.player_x  = Math.max(this.player_x - 10, -10));
+        this.key_triggered_button("Move Right", ["ArrowRight"], () => this.player_x = Math.min(this.player_x + 10, 10));
         this.new_line();
-        this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
-        this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
-        
-        //this.key_triggered_button("Move Left", ["q"], () => this.member_model = this.member_model.times(Mat4.translation(-10, 0, 0)));
-        //this.key_triggered_button("Move Right", ["e"], () => this.member_model = this.member_model.times(Mat4.translation(10, 0, 0)));
-        //Math.max(player_x - 10, -10)
-        this.key_triggered_button("Move Left", ["q"], () => this.player_x  = Math.max(this.player_x - 10, -10));
-        this.key_triggered_button("Move Right", ["e"], () => this.player_x = Math.min(this.player_x + 10, 10));
-        this.new_line();
-        this.key_triggered_button("Jump", ["Shift"], () => this.jump());
+        this.key_triggered_button("Jump", ["ArrowUp"], () => this.jump());
+        this.key_triggered_button("Crouch", ["ArrowDown"], () => this.down_pressed = true, '#6E6460', () => this.down_pressed = false);
     }
+    /*
+    key_triggered_button(description, shortcut_combination, callback, color = '#6E6460',
+                                release_event, recipient = this, parent = this.control_panel)
+    */
+
 
     display(context, program_state) {
 
         //diagnostics
-        
-        //console.log(this.player_x);
 
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
@@ -151,7 +147,10 @@ export class Assignment3 extends Scene {
         }*/
 
         //this.y_accel = -0.077; // modified if down button is pressed
-        this.y_accel = -0.077/4;
+        if (this.down_pressed)
+            this.y_accel = -0.077 / 2;
+        else
+            this.y_accel = -0.077/4;
         this.y_vel = this.y_vel + this.y_accel;
         let y_new = Math.max(this.player_y + this.y_vel, 0);
         if (y_new == 0)
@@ -183,26 +182,53 @@ export class Assignment3 extends Scene {
         
         let time_seconds = program_state.animation_time / 1000;
 
+        this.frames += 1;
+
+        if(time_seconds % 2 < 1)
+        {
+            this.frames/=2
+            console.log("Frames Per Second: " + this.frames);
+            this.frames = 0;
+        }
+
+        
+
         let animation_speed = 3;
 
         if(time_seconds > 20)
             animation_speed = 6;
 
         let limb_rotation = Math.PI / 6 * Math.sin(time_seconds * animation_speed * Math.PI);
+        let is_crouching = this.down_pressed && (this.player_y == 0);
 
         let player_head_mat = player_model_transform;
+        if (is_crouching) {
+            player_head_mat = player_head_mat.times(Mat4.translation(0, -4.25, 0));
+            player_head_mat = player_head_mat.times(Mat4.rotation(-1 * Math.PI / 2, 1, 0, 0));
+            player_head_mat = player_head_mat.times(Mat4.translation(0, 4.25, 0));
+        }
         player_head_mat = player_head_mat.times(Mat4.scale(1.25, 1.25, 1.25));
         this.shapes.player_head.draw(context, program_state, player_head_mat, this.materials.player);
 
         let player_torso_mat = player_model_transform;
         player_torso_mat = player_torso_mat.times(Mat4.translation(0, -2.75, 0));
+        if (is_crouching) {
+            player_torso_mat = player_torso_mat.times(Mat4.translation(0, -1.5, 0));
+            player_torso_mat = player_torso_mat.times(Mat4.rotation(-1 * Math.PI / 2, 1, 0, 0));
+            player_torso_mat = player_torso_mat.times(Mat4.translation(0, 1.5, 0));
+        }
         player_torso_mat = player_torso_mat.times(Mat4.scale(1, 1.5, 0.5));
         this.shapes.player_torso.draw(context, program_state, player_torso_mat, this.materials.player);
 
         let player_left_arm_mat = player_model_transform;
         player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(-1, -1.25, 0));
+        if (is_crouching) {
+            player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(0, -1.5, 0));
+            player_left_arm_mat = player_left_arm_mat.times(Mat4.rotation(-1 * Math.PI / 2, 1, 0, 0));
+            player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(0, 1.5, 0));
+        }
         player_left_arm_mat = player_left_arm_mat.times(Mat4.rotation(Math.PI / 48.0 * (-1), 0, 0, 1));
-        if (this.player_y == 0)
+        if ((this.player_y == 0) && !is_crouching)
             player_left_arm_mat = player_left_arm_mat.times(Mat4.rotation(limb_rotation, 1, 0, 0));
         player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(-0.5, -1.5, 0));
         player_left_arm_mat = player_left_arm_mat.times(Mat4.scale(0.5, 1.5, 0.5));
