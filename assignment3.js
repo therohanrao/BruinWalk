@@ -120,13 +120,13 @@ export class Assignment3 extends Scene {
         
         if(this.real_x < this.player_x)
         {
-            this.member_model = this.member_model.times(Mat4.translation(.2, 0, 0));
-            this.real_x +=.2;
+            this.member_model = this.member_model.times(Mat4.translation(1, 0, 0));
+            this.real_x +=1;
         }
         if(this.real_x > this.player_x)
         {
-            this.member_model = this.member_model.times(Mat4.translation(-.2, 0, 0));
-            this.real_x -=.2;
+            this.member_model = this.member_model.times(Mat4.translation(-1, 0, 0));
+            this.real_x -=1;
         }
 
 
@@ -148,7 +148,7 @@ export class Assignment3 extends Scene {
 
         //this.y_accel = -0.077; // modified if down button is pressed
         if (this.down_pressed)
-            this.y_accel = -0.077 / 2;
+            this.y_accel = -0.077 * 2;
         else
             this.y_accel = -0.077/4;
         this.y_vel = this.y_vel + this.y_accel;
@@ -221,12 +221,13 @@ export class Assignment3 extends Scene {
         this.shapes.player_torso.draw(context, program_state, player_torso_mat, this.materials.player);
 
         let player_left_arm_mat = player_model_transform;
-        player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(-1, -1.25, 0));
+        player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(-1.5, -2.75, 0));
         if (is_crouching) {
             player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(0, -1.5, 0));
             player_left_arm_mat = player_left_arm_mat.times(Mat4.rotation(-1 * Math.PI / 2, 1, 0, 0));
             player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(0, 1.5, 0));
         }
+        player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(0.5, 1.5, 0));
         player_left_arm_mat = player_left_arm_mat.times(Mat4.rotation(Math.PI / 48.0 * (-1), 0, 0, 1));
         if ((this.player_y == 0) && !is_crouching)
             player_left_arm_mat = player_left_arm_mat.times(Mat4.rotation(limb_rotation, 1, 0, 0));
@@ -235,9 +236,15 @@ export class Assignment3 extends Scene {
         this.shapes.player_left_arm.draw(context, program_state, player_left_arm_mat, this.materials.player);
 
         let player_right_arm_mat = player_model_transform;
-        player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(1, -1.25, 0));
+        player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(1.5, -2.75, 0));
+        if (is_crouching) {
+            player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(0, -1.5, 0));
+            player_right_arm_mat = player_right_arm_mat.times(Mat4.rotation(-1 * Math.PI / 2, 1, 0, 0));
+            player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(0, 1.5, 0));
+        }
+        player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(-0.5, 1.5, 0));
         player_right_arm_mat = player_right_arm_mat.times(Mat4.rotation(Math.PI / 48.0, 0, 0, 1));
-        if (this.player_y == 0)
+        if ((this.player_y == 0) && !is_crouching)
             player_right_arm_mat = player_right_arm_mat.times(Mat4.rotation(-1 * limb_rotation, 1, 0, 0));
         player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(0.5, -1.5, 0));
         player_right_arm_mat = player_right_arm_mat.times(Mat4.scale(0.5, 1.5, 0.5));
