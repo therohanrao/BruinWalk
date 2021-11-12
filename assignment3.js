@@ -56,6 +56,18 @@ export class Assignment3 extends Scene {
         this.real_x = 0;
         this.real_y = 0;
         this.real_z = 0;
+
+        this.y_vel = 0;
+        this.y_accel = 0;
+    }
+
+    test_func() {
+        this.player_y = 7;
+    }
+
+    jump() {
+        if (this.player_y == 0)
+            this.y_vel = 0.916/2;
     }
 
     make_control_panel() {
@@ -70,7 +82,8 @@ export class Assignment3 extends Scene {
         //Math.max(player_x - 10, -10)
         this.key_triggered_button("Move Left", ["q"], () => this.player_x  = Math.max(this.player_x - 10, -10));
         this.key_triggered_button("Move Right", ["e"], () => this.player_x = Math.min(this.player_x + 10, 10));
-        this.key_triggered_button("Jump", ["Shift"], () => this.player_y = 7);
+        this.new_line();
+        this.key_triggered_button("Jump", ["Shift"], () => this.jump());
     }
 
     display(context, program_state) {
@@ -104,6 +117,11 @@ export class Assignment3 extends Scene {
         */
         //this.member_model = Mat4.identity();
         //this.member_model = this.member_model.times(Mat4.translation(this.player_x, this.player_y, this.player_z));
+
+        ///
+        /// X axis movement
+        ///
+        
         if(this.real_x < this.player_x)
         {
             this.member_model = this.member_model.times(Mat4.translation(.2, 0, 0));
@@ -115,6 +133,11 @@ export class Assignment3 extends Scene {
             this.real_x -=.2;
         }
 
+
+        ///
+        /// Y axis movement
+        ///
+/*
         if(this.real_y < this.player_y)
         {
             this.member_model = this.member_model.times(Mat4.translation(0, .2, 0));
@@ -125,9 +148,21 @@ export class Assignment3 extends Scene {
             this.player_y = 0;
             this.member_model = this.member_model.times(Mat4.translation(0, -.2, 0));
             this.real_y -=.2;
-        }
+        }*/
+
+        //this.y_accel = -0.077; // modified if down button is pressed
+        this.y_accel = -0.077/4;
+        this.y_vel = this.y_vel + this.y_accel;
+        let y_new = Math.max(this.player_y + this.y_vel, 0);
+        if (y_new == 0)
+            this.y_vel = 0;
+        let delta_y = y_new - this.player_y;
+        this.member_model = this.member_model.times(Mat4.translation(0, delta_y, 0));
+        this.player_y = y_new;
 
 
+
+        
         let object_model_transform = Mat4.identity();
 
         let player_model_transform = this.member_model;
