@@ -63,20 +63,54 @@ export class Assignment3 extends Scene {
         this.down_pressed = false;
 
         this.frames = 0;
+
+        this.unpaused_time = 0;
+        this.is_paused = false;
+
+        this.left_cooldown_time = 0;
+        this.right_cooldown_time = 0;
     }
 
     jump() {
-        if (this.player_y == 0)
+        if (this.player_y == 0 && !this.is_paused)
             this.y_vel = 0.916/2;
+    }
+
+    shift_left() {
+        if (!this.is_paused && this.left_cooldown_time == 0) {
+            this.player_x  = Math.max(this.player_x - 10, -10);
+            this.left_cooldown_time = 1/6;
+            this.right_cooldown_time = 0;
+        }
+    }
+
+    shift_right() {
+        if (!this.is_paused && this.right_cooldown_time == 0) {
+            this.player_x = Math.min(this.player_x + 10, 10);
+            this.left_cooldown_time = 0;
+            this.right_cooldown_time = 1/6;
+        }
+    }
+
+    begin_crouch() {
+        if (!this.is_paused)
+            this.down_pressed = true;
+    }
+
+    end_crouch() {
+        if (!this.is_paused)
+            this.down_pressed = false;
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("Move Left", ["ArrowLeft"], () => this.player_x  = Math.max(this.player_x - 10, -10));
-        this.key_triggered_button("Move Right", ["ArrowRight"], () => this.player_x = Math.min(this.player_x + 10, 10));
+        this.key_triggered_button("Move Left", ["ArrowLeft"], () => this.shift_left());
+        this.key_triggered_button("Move Right", ["ArrowRight"], () => this.shift_right());
         this.new_line();
         this.key_triggered_button("Jump", ["ArrowUp"], () => this.jump());
-        this.key_triggered_button("Crouch", ["ArrowDown"], () => this.down_pressed = true, '#6E6460', () => this.down_pressed = false);
+        this.key_triggered_button("Crouch", ["ArrowDown"], () => this.begin_crouch(), '#6E6460', () => this.end_crouch());
+        this.new_line();
+        this.key_triggered_button("Pause", ["c"], () => this.is_paused = !this.is_paused);
     }
     /*
     key_triggered_button(description, shortcut_combination, callback, color = '#6E6460',
@@ -99,6 +133,15 @@ export class Assignment3 extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
+
+        let delta_time_seconds = program_state.animation_delta_time / 1000;
+
+        if (!this.is_paused) {
+            this.unpaused_time += delta_time_seconds;
+        }
+
+        let time_seconds = this.unpaused_time;
+
         // this.shapes.[XXX].draw([XXX]) // <--example
         //const light_position = vec4(0, 5, 5, 1);
         // The parameters of the Light are: position, color, size
@@ -114,52 +157,47 @@ export class Assignment3 extends Scene {
         //this.member_model = Mat4.identity();
         //this.member_model = this.member_model.times(Mat4.translation(this.player_x, this.player_y, this.player_z));
 
-        ///
-        /// X axis movement
-        ///
+
         
-        if(this.real_x < this.player_x)
-        {
-            this.member_model = this.member_model.times(Mat4.translation(1, 0, 0));
-            this.real_x +=1;
+        if (!this.is_paused) {
+
+            this.left_cooldown_time = Math.max(this.left_cooldown_time - delta_time_seconds, 0);
+            this.right_cooldown_time = Math.max(this.right_cooldown_time - delta_time_seconds, 0);
+
+            ///
+            /// X axis movement
+            ///
+            if(this.real_x < this.player_x)
+            {
+                let translation_distance = Math.min(this.real_x + delta_time_seconds * 60, this.player_x) - this.real_x;
+                this.member_model = this.member_model.times(Mat4.translation(translation_distance, 0, 0));
+                this.real_x += translation_distance;
+            }
+            if(this.real_x > this.player_x)
+            {
+                let translation_distance = Math.max(this.real_x - delta_time_seconds * 60, this.player_x) - this.real_x;
+                this.member_model = this.member_model.times(Mat4.translation(translation_distance, 0, 0));
+                this.real_x += translation_distance;
+            }
+
+
+            ///
+            /// Y axis movement
+            ///
+
+            if (this.down_pressed)
+                this.y_accel = -0.077 * 2;
+            else
+                this.y_accel = -0.077/4;
+            this.y_vel = this.y_vel + this.y_accel;
+            let y_new = Math.max(this.player_y + this.y_vel, 0);
+            if (y_new == 0)
+                this.y_vel = 0;
+            let delta_y = y_new - this.player_y;
+            this.member_model = this.member_model.times(Mat4.translation(0, delta_y, 0));
+            this.player_y = y_new;
+
         }
-        if(this.real_x > this.player_x)
-        {
-            this.member_model = this.member_model.times(Mat4.translation(-1, 0, 0));
-            this.real_x -=1;
-        }
-
-
-        ///
-        /// Y axis movement
-        ///
-/*
-        if(this.real_y < this.player_y)
-        {
-            this.member_model = this.member_model.times(Mat4.translation(0, .2, 0));
-            this.real_y +=.2;
-        }
-        else if (this.real_y > 0)
-        {
-            this.player_y = 0;
-            this.member_model = this.member_model.times(Mat4.translation(0, -.2, 0));
-            this.real_y -=.2;
-        }*/
-
-        //this.y_accel = -0.077; // modified if down button is pressed
-        if (this.down_pressed)
-            this.y_accel = -0.077 * 2;
-        else
-            this.y_accel = -0.077/4;
-        this.y_vel = this.y_vel + this.y_accel;
-        let y_new = Math.max(this.player_y + this.y_vel, 0);
-        if (y_new == 0)
-            this.y_vel = 0;
-        let delta_y = y_new - this.player_y;
-        this.member_model = this.member_model.times(Mat4.translation(0, delta_y, 0));
-        this.player_y = y_new;
-
-
 
         
         let object_model_transform = Mat4.identity();
@@ -180,7 +218,6 @@ export class Assignment3 extends Scene {
         // Limbs: x = 1, y = 3, z = 1
         // Mat4.scale(x/2, y/2, z/2), because each "unit" cube is 2x2x2
         
-        let time_seconds = program_state.animation_time / 1000;
 
         this.frames += 1;
 
@@ -191,7 +228,10 @@ export class Assignment3 extends Scene {
             this.frames = 0;
         }
 
-        
+
+
+
+
 
         let animation_speed = 3;
 
