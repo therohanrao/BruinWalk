@@ -73,7 +73,7 @@ export class Assignment3 extends Scene {
 
     jump() {
         if (this.player_y == 0 && !this.is_paused)
-            this.y_vel = 0.916/2;
+            this.y_vel = 22.74;
     }
 
     shift_left() {
@@ -185,17 +185,23 @@ export class Assignment3 extends Scene {
             /// Y axis movement
             ///
 
+            // Using inspiration from Minecraft Steve, we assume the player (who is 8.5 units tall)
+            // is 1.875 m tall and can jump 1.25 m in the air.
+            // We assume that gravity is -9.8 m/s^2.
+            // This makes their jump have an initial velocity of 4.95 m/s.
+            
             if (this.down_pressed)
-                this.y_accel = -0.077 * 2;
+                this.y_accel = -360.22;
             else
-                this.y_accel = -0.077/4;
-            this.y_vel = this.y_vel + this.y_accel;
-            let y_new = Math.max(this.player_y + this.y_vel, 0);
+                this.y_accel = -45.03;
+            let y_new = Math.max(this.player_y + this.y_vel * delta_time_seconds, 0);
             if (y_new == 0)
                 this.y_vel = 0;
             let delta_y = y_new - this.player_y;
             this.member_model = this.member_model.times(Mat4.translation(0, delta_y, 0));
             this.player_y = y_new;
+            
+            this.y_vel = this.y_vel + this.y_accel * delta_time_seconds;
 
         }
 
@@ -227,11 +233,6 @@ export class Assignment3 extends Scene {
             console.log("Frames Per Second: " + this.frames);
             this.frames = 0;
         }
-
-
-
-
-
 
         let animation_speed = 3;
 
