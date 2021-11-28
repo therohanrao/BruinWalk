@@ -3,8 +3,10 @@
 import {defs, tiny} from './examples/common.js';
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
+
+const {Textured_Phong} = defs
 
 export class Assignment3 extends Scene {
     constructor() {
@@ -31,7 +33,15 @@ export class Assignment3 extends Scene {
             player_right_arm: new defs.Cube(),
             player_left_leg: new defs.Cube(),
             player_right_leg: new defs.Cube(),
+            ground: new defs.Cube(),
+            off_track: new defs.Cube(),
+            sky: new defs.Subdivision_Sphere(4),
         };
+
+        for (let i = 0; i < 24; i++) {
+            this.shapes.ground.arrays.texture_coord[i][0] *= 20 / 3;
+            this.shapes.ground.arrays.texture_coord[i][1] *= 500;
+        }
 
         // *** Materials
         this.materials = {
@@ -44,10 +54,23 @@ export class Assignment3 extends Scene {
             player: new Material(new defs.Phong_Shader(),
                 {ambient: 0.4, diffusivity: 0.6, color: hex_color("#2774AE")}),
 
+            ground: new Material(new Texture_Rotate(), {
+                color: hex_color("#000000"),
+                ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                texture: new Texture("assets/curved_bricks.png", "NEAREST"),
 
+            }),
+
+            off_track: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: 0.6, color: hex_color("#348C31")}),
+
+            sky: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: 0.6, color: hex_color("#77BFF8")}),
+
+            
         }
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 5, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
         this.player_x = 0;
         this.player_y = 0;
@@ -312,6 +335,26 @@ export class Assignment3 extends Scene {
         object_model_transform = object_model_transform.times(Mat4.translation(10, 1, -10));
         this.shapes.player_head.draw(context, program_state, object_model_transform, this.materials.player.override({color: hex_color("FF0000")}));
 
+
+        let sky_transform = Mat4.identity();
+        sky_transform = sky_transform.times(Mat4.scale(510, 80, 750));
+        this.shapes.sky.draw(context, program_state, sky_transform, this.materials.sky);
+
+        let left_off_track_transform = Mat4.identity();
+        left_off_track_transform = left_off_track_transform.times(Mat4.translation(-520, -22.25, 0));
+        left_off_track_transform = left_off_track_transform.times(Mat4.scale(500, 15, 1500)); //!!
+        this.shapes.off_track.draw(context, program_state, left_off_track_transform, this.materials.off_track);
+
+        let right_off_track_transform = Mat4.identity();
+        right_off_track_transform = right_off_track_transform.times(Mat4.translation(520, -22.25, 0));
+        right_off_track_transform = right_off_track_transform.times(Mat4.scale(500, 15, 1500)); //!!
+        this.shapes.off_track.draw(context, program_state, right_off_track_transform, this.materials.off_track);
+
+        let ground_transform = Mat4.identity();
+        ground_transform = ground_transform.times(Mat4.translation(0, -22.25, 0));
+        ground_transform = ground_transform.times(Mat4.scale(20, 15, 1500)); //!!
+        this.shapes.ground.draw(context, program_state, ground_transform, this.materials.ground);
+
         /*
         if(this.attached)
         {
@@ -336,6 +379,8 @@ export class Assignment3 extends Scene {
         */
     }
 }
+
+
 
 class Gouraud_Shader extends Shader {
     // This is a Shader using Phong_Shader as template
@@ -541,3 +586,27 @@ class Ring_Shader extends Shader {
     }
 }
 
+class Texture_Rotate extends Textured_Phong {
+    // TODO:  Modify the shader below (right now it's just the same fragment shader as Textured_Phong) for requirement #7.
+    fragment_glsl_code() {
+        return this.shared_glsl_code() + `
+            varying vec2 f_tex_coord;
+            uniform sampler2D texture;
+            uniform float animation_time;
+            void main(){
+                // Sample the texture image in the correct place:
+                mat2 rotation_matrix = mat2(0.7071067812, 0.7071067812, -0.7071067812, 0.7071067812);
+                vec2 new_tex_coord = f_tex_coord - vec2(0.5, 0.5);
+                new_tex_coord = rotation_matrix * new_tex_coord;
+                new_tex_coord = new_tex_coord + vec2(0.5, 0.5);
+                float new_x = new_tex_coord[0];
+                float new_y = new_tex_coord[1];
+                vec4 tex_color = texture2D( texture, new_tex_coord );
+                if( tex_color.w < .01 ) discard;
+                                                                         // Compute an initial (ambient) color:
+                gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, tex_color.w * tex_color.w ); 
+                                                                         // Compute the final color with contributions from lights:
+                gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
+        } `;
+    }
+}
