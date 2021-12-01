@@ -8,6 +8,121 @@ const {
 
 const {Textured_Phong} = defs
 
+class Obstacle {
+    constructor(x, y, z, scene) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.scene = scene;
+    }
+
+    advance(distance) {
+        this.z += distance;
+    }
+}
+
+class Andre extends Obstacle {
+    constructor(x, y, z, scene) {
+        super(x, y, z, scene);
+    }
+
+    draw(context, program_state) {
+        let andre_head_mat = Mat4.identity();
+        andre_head_mat = andre_head_mat.times(Mat4.translation(this.x, this.y, this.z));
+        andre_head_mat = andre_head_mat.times(Mat4.scale(1.25, 1.25, 1.25));
+        this.scene.shapes.andre_head.draw(context, program_state, andre_head_mat, this.scene.materials.andre);
+
+        let andre_torso_mat = Mat4.identity();
+        andre_torso_mat = andre_torso_mat.times(Mat4.translation(this.x, this.y - 2.75, this.z));
+        andre_torso_mat = andre_torso_mat.times(Mat4.scale(1, 1.5, 0.5));
+        this.scene.shapes.andre_torso.draw(context, program_state, andre_torso_mat, this.scene.materials.andre);
+
+        let andre_left_arm_mat = Mat4.identity();
+        andre_left_arm_mat = andre_left_arm_mat.times(Mat4.translation(this.x - 1.0, this.y - 1.25, this.z));
+        andre_left_arm_mat = andre_left_arm_mat.times(Mat4.rotation(Math.PI / 48.0 * (-1), 0, 0, 1));
+        andre_left_arm_mat = andre_left_arm_mat.times(Mat4.translation(-0.5, -1.5, 0));
+        andre_left_arm_mat = andre_left_arm_mat.times(Mat4.scale(0.5, 1.5, 0.5));
+        this.scene.shapes.andre_left_arm.draw(context, program_state, andre_left_arm_mat, this.scene.materials.andre);
+
+        let andre_right_arm_mat = Mat4.identity();
+        andre_right_arm_mat = andre_right_arm_mat.times(Mat4.translation(this.x + 1.0, this.y - 1.25, this.z));
+        andre_right_arm_mat = andre_right_arm_mat.times(Mat4.rotation(Math.PI / 48.0, 0, 0, 1));
+        andre_right_arm_mat = andre_right_arm_mat.times(Mat4.translation(0.5, -1.5, 0));
+        andre_right_arm_mat = andre_right_arm_mat.times(Mat4.scale(0.5, 1.5, 0.5));
+        this.scene.shapes.andre_right_arm.draw(context, program_state, andre_right_arm_mat, this.scene.materials.andre);
+
+        let andre_left_leg_mat = Mat4.identity();
+        andre_left_leg_mat = andre_left_leg_mat.times(Mat4.translation(this.x, this.y - 4.25, this.z));
+        andre_left_leg_mat = andre_left_leg_mat.times(Mat4.rotation(Math.PI / 192.0 * (-1), 0, 0, 1));
+        andre_left_leg_mat = andre_left_leg_mat.times(Mat4.translation(-0.5, -1.5, 0));
+        andre_left_leg_mat = andre_left_leg_mat.times(Mat4.scale(0.5, 1.5, 0.5));
+        this.scene.shapes.andre_left_leg.draw(context, program_state, andre_left_leg_mat, this.scene.materials.andre);
+
+        let andre_right_leg_mat = Mat4.identity();
+        andre_right_leg_mat = andre_right_leg_mat.times(Mat4.translation(this.x, this.y - 4.25, this.z));
+        andre_right_leg_mat = andre_right_leg_mat.times(Mat4.rotation(Math.PI / 192.0, 0, 0, 1));
+        andre_right_leg_mat = andre_right_leg_mat.times(Mat4.translation(0.5, -1.5, 0));
+        andre_right_leg_mat = andre_right_leg_mat.times(Mat4.scale(0.5, 1.5, 0.5));
+        this.scene.shapes.andre_right_leg.draw(context, program_state, andre_right_leg_mat, this.scene.materials.andre);
+    }
+}
+
+class Table extends Obstacle {
+    constructor(x, y, z, scene) {
+        super(x, y, z, scene);
+    }
+
+    draw(context, program_state) {
+        let table_top_mat = Mat4.identity();
+        table_top_mat = table_top_mat.times(Mat4.translation(this.x, this.y - 4.56, this.z));
+        table_top_mat = table_top_mat.times(Mat4.scale(15, 0.14, 2.27));
+        this.scene.shapes.table_top.draw(context, program_state, table_top_mat, this.scene.materials.table);
+        
+        let table_leg_ne_mat = Mat4.identity();
+        table_leg_ne_mat = table_leg_ne_mat.times(Mat4.translation(this.x + 14.86, this.y - 7.12, this.z - 2.13));
+        table_leg_ne_mat = table_leg_ne_mat.times(Mat4.scale(0.14, 2.42, 0.14));
+        this.scene.shapes.table_leg_ne.draw(context, program_state, table_leg_ne_mat, this.scene.materials.table);
+        
+        let table_leg_se_mat = Mat4.identity();
+        table_leg_se_mat = table_leg_se_mat.times(Mat4.translation(this.x + 14.86, this.y - 7.12, this.z + 2.13));
+        table_leg_se_mat = table_leg_se_mat.times(Mat4.scale(0.14, 2.42, 0.14));
+        this.scene.shapes.table_leg_se.draw(context, program_state, table_leg_se_mat, this.scene.materials.table);
+        
+        let table_leg_sw_mat = Mat4.identity();
+        table_leg_sw_mat = table_leg_sw_mat.times(Mat4.translation(this.x - 14.86, this.y - 7.12, this.z + 2.13));
+        table_leg_sw_mat = table_leg_sw_mat.times(Mat4.scale(0.14, 2.42, 0.14));
+        this.scene.shapes.table_leg_sw.draw(context, program_state, table_leg_sw_mat, this.scene.materials.table);
+        
+        let table_leg_nw_mat = Mat4.identity();
+        table_leg_nw_mat = table_leg_nw_mat.times(Mat4.translation(this.x - 14.86, this.y - 7.12, this.z - 2.13));
+        table_leg_nw_mat = table_leg_nw_mat.times(Mat4.scale(0.14, 2.42, 0.14));
+        this.scene.shapes.table_leg_nw.draw(context, program_state, table_leg_nw_mat, this.scene.materials.table);
+    }
+}
+
+class Banner extends Obstacle {
+    constructor(x, y, z, scene) {
+        super(x, y, z, scene);
+    }
+
+    draw(context, program_state) {
+        let banner_flag_mat = Mat4.identity();
+        banner_flag_mat = banner_flag_mat.times(Mat4.translation(this.x, this.y - 0.23, this.z));
+        banner_flag_mat = banner_flag_mat.times(Mat4.scale(15, 2.42, 0.13));
+        this.scene.shapes.banner_flag.draw(context, program_state, banner_flag_mat, this.scene.materials.banner_flag);
+        
+        let banner_left_leg_mat = Mat4.identity();
+        banner_left_leg_mat = banner_left_leg_mat.times(Mat4.translation(this.x - 14.86, this.y - 5.5, this.z));
+        banner_left_leg_mat = banner_left_leg_mat.times(Mat4.scale(0.14, 3, 0.14));
+        this.scene.shapes.banner_left_leg.draw(context, program_state, banner_left_leg_mat, this.scene.materials.banner_leg);
+        
+        let banner_right_leg_mat = Mat4.identity();
+        banner_right_leg_mat = banner_right_leg_mat.times(Mat4.translation(this.x + 14.86, this.y - 5.5, this.z));
+        banner_right_leg_mat = banner_right_leg_mat.times(Mat4.scale(0.14, 3, 0.14));
+        this.scene.shapes.banner_right_leg.draw(context, program_state, banner_right_leg_mat, this.scene.materials.banner_leg);
+    }
+}
+
 export class Assignment3 extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
@@ -33,14 +148,34 @@ export class Assignment3 extends Scene {
             player_right_arm: new defs.Cube(),
             player_left_leg: new defs.Cube(),
             player_right_leg: new defs.Cube(),
+
             ground: new defs.Cube(),
             off_track: new defs.Cube(),
             sky: new defs.Subdivision_Sphere(4),
+
+            andre_head: new defs.Subdivision_Sphere(4),
+            andre_torso: new defs.Cube(),
+            andre_left_arm: new defs.Cube(),
+            andre_right_arm: new defs.Cube(),
+            andre_left_leg: new defs.Cube(),
+            andre_right_leg: new defs.Cube(),
+
+            table_top: new defs.Cube(),
+            table_leg_ne: new defs.Cube(),
+            table_leg_se: new defs.Cube(),
+            table_leg_sw: new defs.Cube(),
+            table_leg_nw: new defs.Cube(),
+
+            banner_flag: new defs.Cube(),
+            banner_left_leg: new defs.Cube(),
+            banner_right_leg: new defs.Cube(),
         };
 
         for (let i = 0; i < 24; i++) {
             this.shapes.ground.arrays.texture_coord[i][0] *= 20 / 3;
-            this.shapes.ground.arrays.texture_coord[i][1] *= 500;
+            this.shapes.ground.arrays.texture_coord[i][1] *= 250;
+            this.shapes.table_top.arrays.texture_coord[i][0] *= 5;
+            this.shapes.table_top.arrays.texture_coord[i][1] *= 0.76;
         }
 
         // *** Materials
@@ -58,7 +193,6 @@ export class Assignment3 extends Scene {
                 color: hex_color("#000000"),
                 ambient: 1, diffusivity: 0.1, specularity: 0.1,
                 texture: new Texture("assets/curved_bricks.png", "NEAREST"),
-
             }),
 
             off_track: new Material(new defs.Phong_Shader(),
@@ -66,6 +200,24 @@ export class Assignment3 extends Scene {
 
             sky: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 0.6, color: hex_color("#77BFF8")}),
+
+            andre: new Material(new defs.Phong_Shader(),
+                {ambient: 0.4, diffusivity: 0.6, color: hex_color("#FFD100")}),
+
+            table: new Material(new defs.Phong_Shader(),
+                {ambient: 0.4, diffusivity: 0.6, color: hex_color("#444444")}),
+
+            banner_leg: new Material(new defs.Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                texture: new Texture("assets/metal.jpg", "NEAREST"),
+            }),
+
+            banner_flag: new Material(new defs.Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                texture: new Texture("assets/silk.jpg", "NEAREST"),
+            }),
 
             
         }
@@ -88,10 +240,15 @@ export class Assignment3 extends Scene {
         this.frames = 0;
 
         this.unpaused_time = 0;
+        this.run_distance = 0;
         this.is_paused = false;
 
         this.left_cooldown_time = 0;
         this.right_cooldown_time = 0;
+
+        this.obstacles = [];
+
+        this.next_obstacle = 100;
     }
 
     jump() {
@@ -159,11 +316,11 @@ export class Assignment3 extends Scene {
 
         let delta_time_seconds = program_state.animation_delta_time / 1000;
 
-        if (!this.is_paused) {
-            this.unpaused_time += delta_time_seconds;
+        if (this.is_paused) {
+            delta_time_seconds = 0;
         }
-
-        let time_seconds = this.unpaused_time;
+        
+        this.unpaused_time += delta_time_seconds;
 
         // this.shapes.[XXX].draw([XXX]) // <--example
         //const light_position = vec4(0, 5, 5, 1);
@@ -182,51 +339,49 @@ export class Assignment3 extends Scene {
 
 
         
-        if (!this.is_paused) {
+        this.left_cooldown_time = Math.max(this.left_cooldown_time - delta_time_seconds, 0);
+        this.right_cooldown_time = Math.max(this.right_cooldown_time - delta_time_seconds, 0);
 
-            this.left_cooldown_time = Math.max(this.left_cooldown_time - delta_time_seconds, 0);
-            this.right_cooldown_time = Math.max(this.right_cooldown_time - delta_time_seconds, 0);
-
-            ///
-            /// X axis movement
-            ///
-            if(this.real_x < this.player_x)
-            {
-                let translation_distance = Math.min(this.real_x + delta_time_seconds * 60, this.player_x) - this.real_x;
-                this.member_model = this.member_model.times(Mat4.translation(translation_distance, 0, 0));
-                this.real_x += translation_distance;
-            }
-            if(this.real_x > this.player_x)
-            {
-                let translation_distance = Math.max(this.real_x - delta_time_seconds * 60, this.player_x) - this.real_x;
-                this.member_model = this.member_model.times(Mat4.translation(translation_distance, 0, 0));
-                this.real_x += translation_distance;
-            }
-
-
-            ///
-            /// Y axis movement
-            ///
-
-            // Using inspiration from Minecraft Steve, we assume the player (who is 8.5 units tall)
-            // is 1.875 m tall and can jump 1.25 m in the air.
-            // We assume that gravity is -9.8 m/s^2.
-            // This makes their jump have an initial velocity of 4.95 m/s.
-            
-            if (this.down_pressed)
-                this.y_accel = -360.22;
-            else
-                this.y_accel = -45.03;
-            let y_new = Math.max(this.player_y + this.y_vel * delta_time_seconds, 0);
-            if (y_new == 0)
-                this.y_vel = 0;
-            let delta_y = y_new - this.player_y;
-            this.member_model = this.member_model.times(Mat4.translation(0, delta_y, 0));
-            this.player_y = y_new;
-            
-            this.y_vel = this.y_vel + this.y_accel * delta_time_seconds;
-
+        ///
+        /// X axis movement
+        ///
+        if(this.real_x < this.player_x)
+        {
+            let translation_distance = Math.min(this.real_x + delta_time_seconds * 60, this.player_x) - this.real_x;
+            this.member_model = this.member_model.times(Mat4.translation(translation_distance, 0, 0));
+            this.real_x += translation_distance;
         }
+        if(this.real_x > this.player_x)
+        {
+            let translation_distance = Math.max(this.real_x - delta_time_seconds * 60, this.player_x) - this.real_x;
+            this.member_model = this.member_model.times(Mat4.translation(translation_distance, 0, 0));
+            this.real_x += translation_distance;
+        }
+
+
+        ///
+        /// Y axis movement
+        ///
+
+        // Using inspiration from Minecraft Steve, we assume the player (who is 8.5 units tall)
+        // is 1.875 m tall and can jump 1.25 m in the air.
+        // We assume that gravity is -9.8 m/s^2.
+        // This makes their jump have an initial velocity of 4.95 m/s.
+            
+        if (this.down_pressed)
+            this.y_accel = -360.22;
+        else
+            this.y_accel = -45.03;
+        let y_new = Math.max(this.player_y + this.y_vel * delta_time_seconds, 0);
+        if (y_new == 0)
+            this.y_vel = 0;
+        let delta_y = y_new - this.player_y;
+        this.member_model = this.member_model.times(Mat4.translation(0, delta_y, 0));
+        this.player_y = y_new;
+            
+        this.y_vel = this.y_vel + this.y_accel * delta_time_seconds;
+
+        
 
         
         let object_model_transform = Mat4.identity();
@@ -250,19 +405,16 @@ export class Assignment3 extends Scene {
 
         this.frames += 1;
 
-        if(time_seconds % 2 < 1)
+        if(this.unpaused_time % 2 < 1)
         {
             this.frames/=2
             console.log("Frames Per Second: " + this.frames);
             this.frames = 0;
         }
 
-        let animation_speed = 3;
+        let current_speed = 19.57 + 0.10 * this.unpaused_time;
 
-        if(time_seconds > 20)
-            animation_speed = 6;
-
-        let limb_rotation = Math.PI / 6 * Math.sin(time_seconds * animation_speed * Math.PI);
+        let limb_rotation = Math.PI / 6 * Math.sin(this.unpaused_time * current_speed / 6.0 * Math.PI);
         let is_crouching = this.down_pressed && (this.player_y == 0);
 
         let player_head_mat = player_model_transform;
@@ -342,18 +494,72 @@ export class Assignment3 extends Scene {
 
         let left_off_track_transform = Mat4.identity();
         left_off_track_transform = left_off_track_transform.times(Mat4.translation(-520, -22.25, 0));
-        left_off_track_transform = left_off_track_transform.times(Mat4.scale(500, 15, 1500)); //!!
+        left_off_track_transform = left_off_track_transform.times(Mat4.scale(500, 15, 750)); //!!
         this.shapes.off_track.draw(context, program_state, left_off_track_transform, this.materials.off_track);
 
         let right_off_track_transform = Mat4.identity();
         right_off_track_transform = right_off_track_transform.times(Mat4.translation(520, -22.25, 0));
-        right_off_track_transform = right_off_track_transform.times(Mat4.scale(500, 15, 1500)); //!!
+        right_off_track_transform = right_off_track_transform.times(Mat4.scale(500, 15, 750)); //!!
         this.shapes.off_track.draw(context, program_state, right_off_track_transform, this.materials.off_track);
 
+        let frame_distance = delta_time_seconds * current_speed;
+        this.run_distance += frame_distance;
+        let ground_offset = this.run_distance % (3 * 2**0.5);
+
         let ground_transform = Mat4.identity();
-        ground_transform = ground_transform.times(Mat4.translation(0, -22.25, 0));
-        ground_transform = ground_transform.times(Mat4.scale(20, 15, 1500)); //!!
+        ground_transform = ground_transform.times(Mat4.translation(0, -22.25, ground_offset));
+        ground_transform = ground_transform.times(Mat4.scale(20, 15, 750)); //!!
         this.shapes.ground.draw(context, program_state, ground_transform, this.materials.ground);
+
+        ///////////////////
+        // SPAWN OBSTACLES
+        ///////////////////
+        while (this.next_obstacle < this.run_distance + 750) {
+            switch (Math.floor(Math.random() * 12)) {
+                case 0:
+                    this.obstacles.push(new Andre(0, 0, this.run_distance - this.next_obstacle, this));
+                    break;
+                case 1:
+                    this.obstacles.push(new Andre(-10, 0, this.run_distance - this.next_obstacle, this));
+                    break;
+                case 2:
+                    this.obstacles.push(new Andre(10, 0, this.run_distance - this.next_obstacle, this));
+                    break;
+                case 3:
+                    this.obstacles.push(new Andre(-10, 0, this.run_distance - this.next_obstacle, this));
+                    this.obstacles.push(new Andre(0, 0, this.run_distance - this.next_obstacle, this));
+                    break;
+                case 4:
+                    this.obstacles.push(new Andre(-10, 0, this.run_distance - this.next_obstacle, this));
+                    this.obstacles.push(new Andre(10, 0, this.run_distance - this.next_obstacle, this));
+                    break;
+                case 5:
+                    this.obstacles.push(new Andre(0, 0, this.run_distance - this.next_obstacle, this));
+                    this.obstacles.push(new Andre(10, 0, this.run_distance - this.next_obstacle, this));
+                    break;
+                case 6:
+                case 7:
+                case 8:
+                case 9:
+                    this.obstacles.push(new Table(0, 0, this.run_distance - this.next_obstacle, this));
+                    break;
+                case 10:
+                case 11:
+                    this.obstacles.push(new Banner(0, 0, this.run_distance - this.next_obstacle, this));
+                    break;
+            }
+            this.next_obstacle += 24.0 + 24.0 * Math.random();
+        }
+
+        
+        for (let i = 0; i < this.obstacles.length; i++) {
+            let current_obstacle = this.obstacles[i];
+            current_obstacle.advance(delta_time_seconds * current_speed);
+            current_obstacle.draw(context, program_state);
+            if (current_obstacle.z > 20) {
+                this.obstacles.splice(i, 1);
+            }
+        }
 
         /*
         if(this.attached)
@@ -599,8 +805,6 @@ class Texture_Rotate extends Textured_Phong {
                 vec2 new_tex_coord = f_tex_coord - vec2(0.5, 0.5);
                 new_tex_coord = rotation_matrix * new_tex_coord;
                 new_tex_coord = new_tex_coord + vec2(0.5, 0.5);
-                float new_x = new_tex_coord[0];
-                float new_y = new_tex_coord[1];
                 vec4 tex_color = texture2D( texture, new_tex_coord );
                 if( tex_color.w < .01 ) discard;
                                                                          // Compute an initial (ambient) color:
