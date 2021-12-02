@@ -294,6 +294,8 @@ export class Assignment3 extends Scene {
         for (let i = 0; i < 24; i++) {
             this.shapes.ground.arrays.texture_coord[i][0] *= 20 / 3;
             this.shapes.ground.arrays.texture_coord[i][1] *= 500;
+            this.shapes.off_track.arrays.texture_coord[i][0] *= 500 / 3;
+            this.shapes.off_track.arrays.texture_coord[i][1] *= 500;
         }
 
         // *** Materials
@@ -318,6 +320,12 @@ export class Assignment3 extends Scene {
                 color: hex_color("#000000"),
                 ambient: 1, diffusivity: 0.1, specularity: 0.1,
                 texture: new Texture("assets/curved_bricks.png", "NEAREST"),
+            }),
+
+            grass: new Material(new defs.Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                texture: new Texture("assets/grass.jpg", "NEAREST"),
             }),
 
             off_track: new Material(new defs.Phong_Shader(),
@@ -350,7 +358,7 @@ export class Assignment3 extends Scene {
         ////////////////
         // GAME VARIABLES
         ////////////////
-        
+
         this.member_model = Mat4.identity();
         this.initial_camera_location = Mat4.look_at(vec3(0, 5, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
@@ -378,6 +386,8 @@ export class Assignment3 extends Scene {
         this.obstacles = [];
 
         this.next_obstacle = 100;
+
+        this.just_reset_game = false;
     }
 
     jump() {
@@ -437,6 +447,8 @@ export class Assignment3 extends Scene {
         this.obstacles = [];
 
         this.next_obstacle = 100;
+
+        this.just_reset_game = true;
     }
 
     make_control_panel() {
@@ -471,6 +483,11 @@ export class Assignment3 extends Scene {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(this.initial_camera_location);
+        }
+
+        if (this.just_reset_game) {
+            program_state.set_camera(this.initial_camera_location);
+            this.just_reset_game = false;
         }
 
         program_state.projection_transform = Mat4.perspective(
@@ -694,19 +711,20 @@ export class Assignment3 extends Scene {
         let sky_blue = 0.42 + 0.55 * sky_gradient;
         this.shapes.sky.draw(context, program_state, sky_transform, this.materials.sky.override({color: color(sky_red, sky_green, sky_blue, 1.0)}));
 
-        let left_off_track_transform = Mat4.identity();
-        left_off_track_transform = left_off_track_transform.times(Mat4.translation(-520, -22.25, 0));
-        left_off_track_transform = left_off_track_transform.times(Mat4.scale(500, 15, 750)); //!!
-        this.shapes.off_track.draw(context, program_state, left_off_track_transform, this.materials.off_track);
-
-        let right_off_track_transform = Mat4.identity();
-        right_off_track_transform = right_off_track_transform.times(Mat4.translation(520, -22.25, 0));
-        right_off_track_transform = right_off_track_transform.times(Mat4.scale(500, 15, 750)); //!!
-        this.shapes.off_track.draw(context, program_state, right_off_track_transform, this.materials.off_track);
-
         let frame_distance = delta_time_seconds * current_speed;
         this.run_distance += frame_distance;
-        let ground_offset = this.run_distance % (528 * 2**0.5);
+        let ground_offset = this.run_distance % (528.0 * 2**0.5);
+        let off_track_offset = this.run_distance % 3.0;
+
+        let left_off_track_transform = Mat4.identity();
+        left_off_track_transform = left_off_track_transform.times(Mat4.translation(-520, -22.25, off_track_offset));
+        left_off_track_transform = left_off_track_transform.times(Mat4.scale(500, 15, 1500)); //!!
+        this.shapes.off_track.draw(context, program_state, left_off_track_transform, this.materials.grass);
+
+        let right_off_track_transform = Mat4.identity();
+        right_off_track_transform = right_off_track_transform.times(Mat4.translation(520, -22.25, off_track_offset));
+        right_off_track_transform = right_off_track_transform.times(Mat4.scale(500, 15, 750)); //!!
+        this.shapes.off_track.draw(context, program_state, right_off_track_transform, this.materials.grass);
 
         let ground_transform = Mat4.identity();
         ground_transform = ground_transform.times(Mat4.translation(0, -22.25, ground_offset));
