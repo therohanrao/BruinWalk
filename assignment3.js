@@ -101,24 +101,27 @@ class Table extends Obstacle {
 }
 
 class Banner extends Obstacle {
-    constructor(x, y, z, scene) {
+    constructor(x, y, z, scene, height) {
         super(x, y, z, scene);
+        this.height = height;
     }
 
     draw(context, program_state) {
+        if (this.z < 10) {
         let banner_flag_mat = Mat4.identity();
-        banner_flag_mat = banner_flag_mat.times(Mat4.translation(this.x, this.y - 0.23, this.z));
-        banner_flag_mat = banner_flag_mat.times(Mat4.scale(15, 2.42, 0.13));
-        this.scene.shapes.banner_flag.draw(context, program_state, banner_flag_mat, this.scene.materials.banner_flag);
+            banner_flag_mat = banner_flag_mat.times(Mat4.translation(this.x, this.y + this.height - 4.83, this.z));
+            banner_flag_mat = banner_flag_mat.times(Mat4.scale(15, 2.42, 0.13));
+            this.scene.shapes.banner_flag.draw(context, program_state, banner_flag_mat, this.scene.materials.banner_flag);
+        }
         
         let banner_left_leg_mat = Mat4.identity();
-        banner_left_leg_mat = banner_left_leg_mat.times(Mat4.translation(this.x - 14.86, this.y - 5.5, this.z));
-        banner_left_leg_mat = banner_left_leg_mat.times(Mat4.scale(0.14, 3, 0.14));
+        banner_left_leg_mat = banner_left_leg_mat.times(Mat4.translation(this.x - 14.86, this.y + this.height / 2.0 - 4.83, this.z));
+        banner_left_leg_mat = banner_left_leg_mat.times(Mat4.scale(0.14, this.height / 2.0 + 2.42, 0.14));
         this.scene.shapes.banner_left_leg.draw(context, program_state, banner_left_leg_mat, this.scene.materials.banner_leg);
         
         let banner_right_leg_mat = Mat4.identity();
-        banner_right_leg_mat = banner_right_leg_mat.times(Mat4.translation(this.x + 14.86, this.y - 5.5, this.z));
-        banner_right_leg_mat = banner_right_leg_mat.times(Mat4.scale(0.14, 3, 0.14));
+        banner_right_leg_mat = banner_right_leg_mat.times(Mat4.translation(this.x + 14.86, this.y + this.height / 2.0 - 4.83, this.z));
+        banner_right_leg_mat = banner_right_leg_mat.times(Mat4.scale(0.14, this.height / 2.0 + 2.42, 0.14));
         this.scene.shapes.banner_right_leg.draw(context, program_state, banner_right_leg_mat, this.scene.materials.banner_leg);
     }
 }
@@ -173,9 +176,7 @@ export class Assignment3 extends Scene {
 
         for (let i = 0; i < 24; i++) {
             this.shapes.ground.arrays.texture_coord[i][0] *= 20 / 3;
-            this.shapes.ground.arrays.texture_coord[i][1] *= 250;
-            this.shapes.table_top.arrays.texture_coord[i][0] *= 5;
-            this.shapes.table_top.arrays.texture_coord[i][1] *= 0.76;
+            this.shapes.ground.arrays.texture_coord[i][1] *= 500;
         }
 
         // *** Materials
@@ -504,11 +505,11 @@ export class Assignment3 extends Scene {
 
         let frame_distance = delta_time_seconds * current_speed;
         this.run_distance += frame_distance;
-        let ground_offset = this.run_distance % (3 * 2**0.5);
+        let ground_offset = this.run_distance % (528 * 2**0.5);
 
         let ground_transform = Mat4.identity();
         ground_transform = ground_transform.times(Mat4.translation(0, -22.25, ground_offset));
-        ground_transform = ground_transform.times(Mat4.scale(20, 15, 750)); //!!
+        ground_transform = ground_transform.times(Mat4.scale(20, 15, 1500)); //!!
         this.shapes.ground.draw(context, program_state, ground_transform, this.materials.ground);
 
         ///////////////////
@@ -545,7 +546,8 @@ export class Assignment3 extends Scene {
                     break;
                 case 10:
                 case 11:
-                    this.obstacles.push(new Banner(0, 0, this.run_distance - this.next_obstacle, this));
+                    let banner_height = 6.375 + 3.542 * Math.random();
+                    this.obstacles.push(new Banner(0, 0, this.run_distance - this.next_obstacle, this, banner_height));
                     break;
             }
             this.next_obstacle += 24.0 + 24.0 * Math.random();
@@ -556,7 +558,7 @@ export class Assignment3 extends Scene {
             let current_obstacle = this.obstacles[i];
             current_obstacle.advance(delta_time_seconds * current_speed);
             current_obstacle.draw(context, program_state);
-            if (current_obstacle.z > 20) {
+            if (current_obstacle.z > 80) {
                 this.obstacles.splice(i, 1);
             }
         }
