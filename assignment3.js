@@ -50,7 +50,27 @@ export class Text_Line extends Shape {                           // **Text_Line*
     }
 }
 
+class Cloud {
+    constructor(x, y, z, x_size, z_size, scene) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.x_size = x_size;
+        this.z_size = z_size;
+        this.scene = scene;
+    }
 
+    advance(distance) {
+        this.z += distance;
+    }
+
+    draw (context, program_state, cloud_color) {
+        let cloud_mat = Mat4.identity();
+        cloud_mat = cloud_mat.times(Mat4.translation(this.x, this.y, this.z));
+        cloud_mat = cloud_mat.times(Mat4.scale(this.x_size, 0.05, this.z_size));
+        this.scene.shapes.cloud.draw(context, program_state, cloud_mat, this.scene.materials.cloud.override({color: cloud_color}));
+    }
+}
 
 class Obstacle {
     constructor(x, y, z, scene) {
@@ -276,6 +296,8 @@ export class Assignment3 extends Scene {
             banner_flag: new defs.Cube(),
             banner_left_leg: new defs.Cube(),
             banner_right_leg: new defs.Cube(),
+
+            cloud: new defs.Cube(),
         };
 
         const phong = new defs.Phong_Shader();
@@ -352,6 +374,9 @@ export class Assignment3 extends Scene {
                 texture: new Texture("assets/silk.jpg", "NEAREST"),
             }),
 
+            cloud: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: 0.6, color: hex_color("#D8D7D3")}),
+
             
         }
 
@@ -384,8 +409,10 @@ export class Assignment3 extends Scene {
         this.right_cooldown_time = 0;
 
         this.obstacles = [];
+        this.clouds = [];
 
         this.next_obstacle = 100;
+        this.next_cloud = 12;
 
         this.just_reset_game = false;
     }
@@ -445,8 +472,10 @@ export class Assignment3 extends Scene {
         this.right_cooldown_time = 0;
 
         this.obstacles = [];
+        this.clouds = [];
 
         this.next_obstacle = 100;
+        this.next_cloud = 12;
 
         this.just_reset_game = true;
     }
@@ -731,6 +760,33 @@ export class Assignment3 extends Scene {
         ground_transform = ground_transform.times(Mat4.scale(20, 15, 1500)); //!!
         this.shapes.ground.draw(context, program_state, ground_transform, this.materials.ground);
 
+        //////////////////
+        // SPAWN SCENERY
+        //////////////////
+
+        while (this.next_cloud < this.run_distance / 2.0 + 750) {
+            let cloud_x = Math.random() * 1020.0 - 510.0;
+            let cloud_x_size = Math.random() * 36.0 + 18.0;
+            let cloud_z_size = Math.random() * 36.0 + 18.0;
+            this.clouds.push(new Cloud(cloud_x, 17, this.run_distance / 2.0 - this.next_cloud, cloud_x_size, cloud_z_size, this));
+            this.next_cloud += 25.0 * Math.random();
+        }
+
+        let cloud_red = 0.40 + 0.22 * sky_gradient;
+        let cloud_green = 0.34 + 0.25 * sky_gradient;
+        let cloud_blue = 0.34 + 0.24 * sky_gradient;
+
+        for (let i = 0; i < this.clouds.length; i++) {
+            let current_cloud = this.clouds[i];
+            current_cloud.advance(frame_distance / 2);
+            current_cloud.draw(context, program_state, color(cloud_red, cloud_green, cloud_blue, 0.5));
+            if (current_cloud.z > 80) {
+                this.clouds.splice(i, 1);
+                i -= 1;
+            }
+            
+        }
+
         ///////////////////
         // SPAWN OBSTACLES
         ///////////////////
@@ -769,6 +825,7 @@ export class Assignment3 extends Scene {
                     this.obstacles.push(new Banner(0, 0, this.run_distance - this.next_obstacle, this, banner_height));
                     break;
             }
+            console.log(this.next_obstacle);
             this.next_obstacle += 24.0 + 24.0 * Math.random();
         }
 
@@ -776,7 +833,7 @@ export class Assignment3 extends Scene {
 
         for (let i = 0; i < this.obstacles.length; i++) {
             let current_obstacle = this.obstacles[i];
-            current_obstacle.advance(delta_time_seconds * current_speed);
+            current_obstacle.advance(frame_distance);
             if (current_obstacle.check_collision(this.player_x, this.player_y, this.player_z, this.is_crouching)) {
                 this.game_over = true;
             }
