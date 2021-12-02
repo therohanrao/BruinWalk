@@ -231,7 +231,6 @@ export class Assignment3 extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
-        this.member_model = Mat4.identity();
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
             //text box code:
@@ -325,7 +324,7 @@ export class Assignment3 extends Scene {
                 {ambient: 1, diffusivity: 0.6, color: hex_color("#348C31")}),
 
             sky: new Material(new defs.Phong_Shader(),
-                {ambient: 1, diffusivity: 0.6, color: hex_color("#77BFF8")}),
+                {ambient: 1, diffusivity: 0.6, color: hex_color("#40316A")}),
 
             andre: new Material(new defs.Phong_Shader(),
                 {ambient: 0.4, diffusivity: 0.6, color: hex_color("#FFD100")}),
@@ -351,7 +350,8 @@ export class Assignment3 extends Scene {
         ////////////////
         // GAME VARIABLES
         ////////////////
-
+        
+        this.member_model = Mat4.identity();
         this.initial_camera_location = Mat4.look_at(vec3(0, 5, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
         this.prospective_x = 0;
@@ -410,6 +410,7 @@ export class Assignment3 extends Scene {
     }
 
     reset_game() {
+        this.member_model = Mat4.identity();
         this.initial_camera_location = Mat4.look_at(vec3(0, 5, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
         this.prospective_x = 0;
@@ -682,7 +683,16 @@ export class Assignment3 extends Scene {
 
         let sky_transform = Mat4.identity();
         sky_transform = sky_transform.times(Mat4.scale(510, 80, 750));
-        this.shapes.sky.draw(context, program_state, sky_transform, this.materials.sky);
+        let sky_gradient = 0;
+        let time_of_day = this.unpaused_time % 120.0;
+        if (time_of_day < 60.0) sky_gradient = 1;
+        else if (time_of_day < 65.0) sky_gradient = (65.0 - time_of_day) / 5.0;
+        else if (time_of_day < 115.0) sky_gradient = 0;
+        else sky_gradient = (time_of_day - 115.0) / 5.0;
+        let sky_red = 0.25 + 0.21 * sky_gradient;
+        let sky_green = 0.19 + 0.56 * sky_gradient;
+        let sky_blue = 0.42 + 0.55 * sky_gradient;
+        this.shapes.sky.draw(context, program_state, sky_transform, this.materials.sky.override({color: color(sky_red, sky_green, sky_blue, 1.0)}));
 
         let left_off_track_transform = Mat4.identity();
         left_off_track_transform = left_off_track_transform.times(Mat4.translation(-520, -22.25, 0));
