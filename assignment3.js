@@ -136,7 +136,7 @@ class Andre extends Obstacle {
         let andre_z = this.z;
         let andre_head_center_y = this.y;
         let andre_torso_center_y = this.y - 2.75;
-        //let andre_leg_center_y = this.y - 5.75;
+        let andre_leg_center_y = this.y - 5.75;
 
         let player_x = p_x;
         let player_z = p_z; 
@@ -144,38 +144,60 @@ class Andre extends Obstacle {
         let player_torso_center_y = p_y - 2.75;
         let player_leg_center_y = p_y - 5.75;
         
+        // PLAYER CROUCHING
         if(p_crouch){
-            let head_center_z = -4.25
-            if (Math.abs(player_x - andre_x) <= (1.25+2) && Math.abs(head_center_z - andre_z) <= (1.25+0.5)) {
+            // CHECK PLAYER HEAD, ANDRE TORSO
+            let head_center_z = -4.25;
+            if (Math.abs(player_x - andre_x) <= (1.0+2) && Math.abs(head_center_z - andre_z) <= (1.0+0.5)) {
                 return true;
             }
+
+            // CHECK PLAYER TORSO, ANDRE TORSO
+            let torso_center_z = -1.5;
+            if (Math.abs(player_x - andre_x) <= (2.0+2) && Math.abs(torso_center_z - andre_z) <= (0.5+0.5)) {
+                return true;
+            }
+
+            // CHECK PLAYER LEG, ANDRE LEG
+            if (Math.abs(player_x - andre_x) <= (1.0+1.0) && Math.abs(player_z - andre_z) <= (0.5+0.5)) {
+                return true;
+            }
+            
         }
 
-        //player non crouching
-        //collision with player's head
-        //player head with andre head
-        if(Math.abs(player_x - andre_x) <= 2.5 && Math.abs(player_z - andre_z) <= 2.5
-            && Math.abs(player_head_center_y - andre_head_center_y) <= 2.5){
-            return true;
-        }
-        
-        //collision with player's torso
-        //player torso with andre head
-        if(Math.abs(player_x - andre_x) <= (2+1.25) && Math.abs(player_z - andre_z) <= (0.5+0.5)
-            && Math.abs(player_torso_center_y - andre_head_center_y) <= (1.5+1.25)){
-            return true;
-        }
-        //player torso with andre torso
-        if(Math.abs(player_x - andre_x) <= (2+2) && Math.abs(player_z - andre_z) <= (0.5+0.5)
-        && Math.abs(player_torso_center_y - andre_torso_center_y) <= (1.5+1.5)){
-        return true;
-        }
-        
-        //collision with player's legs
-        //player legs with andre head
-        if(Math.abs(player_x - andre_x) <= (1+1.25) && Math.abs(player_z - andre_z) <= (0.5+1.25)
-            && Math.abs(player_leg_center_y - andre_head_center_y) <= (1.5+1.25)){
-            return true;
+        // PLAYER NOT CROUCHING
+
+        else {
+            // CHECK PLAYER HEAD, ANDRE HEAD
+            if(Math.abs(player_x - andre_x) <= 2.0 && Math.abs(player_z - andre_z) <= 2.0
+                    && Math.abs(player_head_center_y - andre_head_center_y) <= 2.0){
+                return true;
+            }
+            
+            // CHECK PLAYER TORSO, ANDRE HEAD
+            if(Math.abs(player_x - andre_x) <= (2+1.0) && Math.abs(player_z - andre_z) <= (0.5+1.0)
+                    && Math.abs(player_torso_center_y - andre_head_center_y) <= (1.5+1.0)){
+                return true;
+            }
+
+            // CHECK PLAYER TORSO, ANDRE TORSO
+            if(Math.abs(player_x - andre_x) <= (2+2) && Math.abs(player_z - andre_z) <= (0.5+0.5)
+                    && Math.abs(player_torso_center_y - andre_torso_center_y) <= (1.5+1.5)){
+                return true;
+            }
+
+            // CHECK PLAYER LEG, ANDRE HEAD
+            if(Math.abs(player_x - andre_x) <= (1+1.0) && Math.abs(player_z - andre_z) <= (0.5+1.0)
+                    && Math.abs(player_leg_center_y - andre_head_center_y) <= (1.5+1.0)){
+                return true;
+            }
+
+            // CHECK PLAYER LEG, ANDRE TORSO
+            if(Math.abs(player_x - andre_x) <= (1+2.0) && Math.abs(player_z - andre_z) <= (0.5+0.5)
+                    && Math.abs(player_leg_center_y - andre_torso_center_y) <= (1.5+1.5)){
+                return true;
+            }
+
         }
         
         return false;
