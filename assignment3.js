@@ -131,6 +131,53 @@ class Andre extends Obstacle {
     }
 
     check_collision(p_x, p_y, p_z, p_crouch) {
+        
+        let andre_x = this.x;
+        let andre_z = this.z;
+        let andre_head_center_y = this.y;
+        let andre_torso_center_y = this.y - 2.75;
+        //let andre_leg_center_y = this.y - 5.75;
+
+        let player_x = p_x;
+        let player_z = p_z; 
+        let player_head_center_y = p_y;
+        let player_torso_center_y = p_y - 2.75;
+        let player_leg_center_y = p_y - 5.75;
+        
+        if(p_crouch){
+            let head_center_z = -4.25
+            if (Math.abs(player_x - andre_x) <= (1.25+2) && Math.abs(head_center_z - andre_z) <= (1.25+0.5)) {
+                return true;
+            }
+        }
+
+        //player non crouching
+        //collision with player's head
+        //player head with andre head
+        if(Math.abs(player_x - andre_x) <= 2.5 && Math.abs(player_z - andre_z) <= 2.5
+            && Math.abs(player_head_center_y - andre_head_center_y) <= 2.5){
+            return true;
+        }
+        
+        //collision with player's torso
+        //player torso with andre head
+        if(Math.abs(player_x - andre_x) <= (2+1.25) && Math.abs(player_z - andre_z) <= (0.5+0.5)
+            && Math.abs(player_torso_center_y - andre_head_center_y) <= (1.5+1.25)){
+            return true;
+        }
+        //player torso with andre torso
+        if(Math.abs(player_x - andre_x) <= (2+2) && Math.abs(player_z - andre_z) <= (0.5+0.5)
+        && Math.abs(player_torso_center_y - andre_torso_center_y) <= (1.5+1.5)){
+        return true;
+        }
+        
+        //collision with player's legs
+        //player legs with andre head
+        if(Math.abs(player_x - andre_x) <= (1+1.25) && Math.abs(player_z - andre_z) <= (0.5+1.25)
+            && Math.abs(player_leg_center_y - andre_head_center_y) <= (1.5+1.25)){
+            return true;
+        }
+        
         return false;
     }
 }
@@ -246,9 +293,9 @@ class Banner extends Obstacle {
         if(p_crouch) {
             return false;
         }
-
+        
         let head_center_y = p_y;
-        let head_center_z = 0;
+        let head_center_z = p_z;
         let banner_center_y = this.y +this.height - 4.83;
         let banner_center_z = this.z;
 
