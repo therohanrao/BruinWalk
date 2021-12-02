@@ -895,7 +895,8 @@ export class Assignment3 extends Scene {
         for (let i = 0; i < this.obstacles.length; i++) {
             let current_obstacle = this.obstacles[i];
             current_obstacle.advance(frame_distance);
-            if (current_obstacle.check_collision(this.player_x, this.player_y, this.player_z, this.is_crouching)) {
+            if (this.player_z - current_obstacle.z < 10 
+                && current_obstacle.check_collision(this.player_x, this.player_y, this.player_z, this.is_crouching)) {
                 this.game_over = true;
             }
             current_obstacle.draw(context, program_state);
