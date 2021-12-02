@@ -1,5 +1,5 @@
 //
-
+// pog
 import {defs, tiny} from './examples/common.js';
 
 const {
@@ -7,6 +7,50 @@ const {
 } = tiny;
 
 const {Textured_Phong} = defs
+
+export class Text_Line extends Shape {                           // **Text_Line** embeds text in the 3D world, using a crude texture
+                                                                 // method.  This Shape is made of a horizontal arrangement of quads.
+                                                                 // Each is textured over with images of ASCII characters, spelling
+                                                                 // out a string.  Usage:  Instantiate the Shape with the desired
+                                                                 // character line width.  Then assign it a single-line string by calling
+                                                                 // set_string("your string") on it. Draw the shape on a material
+                                                                 // with full ambient weight, and text.png assigned as its texture
+                                                                 // file.  For multi-line strings, repeat this process and draw with
+                                                                 // a different matrix.
+    constructor(max_size) {
+        super("position", "normal", "texture_coord");
+        this.max_size = max_size;
+        var object_transform = Mat4.identity();
+        for (var i = 0; i < max_size; i++) {                                       // Each quad is a separate Square instance:
+            defs.Square.insert_transformed_copy_into(this, [], object_transform);
+            object_transform.post_multiply(Mat4.translation(1.5, 0, 0));
+        }
+    }
+
+    set_string(line, context) {           // set_string():  Call this to overwrite the texture coordinates buffer with new
+        // values per quad, which enclose each of the string's characters.
+        this.arrays.texture_coord = [];
+        for (var i = 0; i < this.max_size; i++) {
+            var row = Math.floor((i < line.length ? line.charCodeAt(i) : ' '.charCodeAt()) / 16),
+                col = Math.floor((i < line.length ? line.charCodeAt(i) : ' '.charCodeAt()) % 16);
+
+            var skip = 3, size = 32, sizefloor = size - skip;
+            var dim = size * 16,
+                left = (col * size + skip) / dim, top = (row * size + skip) / dim,
+                right = (col * size + sizefloor) / dim, bottom = (row * size + sizefloor + 5) / dim;
+
+            this.arrays.texture_coord.push(...Vector.cast([left, 1 - bottom], [right, 1 - bottom],
+                [left, 1 - top], [right, 1 - top]));
+        }
+        if (!this.existing) {
+            this.copy_onto_graphics_card(context);
+            this.existing = true;
+        } else
+            this.copy_onto_graphics_card(context, ["texture_coord"], false);
+    }
+}
+
+
 
 class Obstacle {
     constructor(x, y, z, scene) {
@@ -65,6 +109,10 @@ class Andre extends Obstacle {
         andre_right_leg_mat = andre_right_leg_mat.times(Mat4.scale(0.5, 1.5, 0.5));
         this.scene.shapes.andre_right_leg.draw(context, program_state, andre_right_leg_mat, this.scene.materials.andre);
     }
+
+    check_collision(p_x, p_y, p_z, p_crouch) {
+        return false;
+    }
 }
 
 class Table extends Obstacle {
@@ -98,6 +146,54 @@ class Table extends Obstacle {
         table_leg_nw_mat = table_leg_nw_mat.times(Mat4.scale(0.14, 2.42, 0.14));
         this.scene.shapes.table_leg_nw.draw(context, program_state, table_leg_nw_mat, this.scene.materials.table);
     }
+     // PLAYER DIMENSIONS:
+        // Head: r = 1.25. center of the head is at the origin.
+        // Torso: x = 2, y = 3, z = 1
+        // Limbs: x = 1, y = 3, z = 1
+        // Mat4.scale(x/2, y/2, z/2), because each "unit" cube is 2x2x2
+    //hit box
+    //head
+    //player x: -1.25 < x < 1.25
+    //player y: -1.25 < y < 1.25
+    //player z: -1.25 < z < 1.25
+    //mid section
+    //player x: -2 < x < 2
+    //player y: -1.5 < y < 1.5
+    //player z: -0.5 < z < 0.5
+    //legs
+    //player x: -1 < x < 1
+    //player y: -1.5 < y < 1.5
+    //player z: -0.5 < z < 0.5
+
+    //Table height: 0.14
+    //standing center head to table top: 4.56
+    check_collision(p_x, p_y, p_z, p_crouch) {
+        // CHECK LEG COLLISON:
+        let leg_center_y = p_y - 5.75;
+        let leg_center_z = 0;
+        let table_center_y = this.y - 4.56;
+        let table_center_z = this.z;
+
+        if (Math.abs(leg_center_y - table_center_y) <= 1.64 && Math.abs(leg_center_z - table_center_z) <= 2.77) {
+            return true;
+        }
+
+        if (p_crouch) {
+            // CHECK TORSO COLLISION:
+            let torso_center_z = -1.5;
+            if (Math.abs(torso_center_z - table_center_z) <= 3.77) {
+                return true;
+            }
+
+            // CHECK HEAD COLLISION:
+            let head_center_z = -4.25
+            if (Math.abs(head_center_z - table_center_z) <= 3.5) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
 
 class Banner extends Obstacle {
@@ -124,7 +220,12 @@ class Banner extends Obstacle {
         banner_right_leg_mat = banner_right_leg_mat.times(Mat4.scale(0.14, this.height / 2.0 + 2.42, 0.14));
         this.scene.shapes.banner_right_leg.draw(context, program_state, banner_right_leg_mat, this.scene.materials.banner_leg);
     }
+
+    check_collision(p_x, p_y, p_z, p_crouch) {
+        return false;
+    }
 }
+
 
 export class Assignment3 extends Scene {
     constructor() {
@@ -133,6 +234,10 @@ export class Assignment3 extends Scene {
         this.member_model = Mat4.identity();
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
+            //text box code:
+            cube: new defs.Cube(), 
+            text: new Text_Line(35),
+            //end text box code
             torus: new defs.Torus(15, 15),
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
@@ -174,6 +279,19 @@ export class Assignment3 extends Scene {
             banner_right_leg: new defs.Cube(),
         };
 
+        const phong = new defs.Phong_Shader();
+        const texture = new defs.Textured_Phong(1);
+        this.grey = new Material(phong, {
+            color: color(.5, .5, .5, 1), ambient: 0,
+            diffusivity: .3, specularity: .5, smoothness: 10
+        })
+
+        // To show text you need a Material like this one:
+        this.text_image = new Material(texture, {
+            ambient: 1, diffusivity: 0, specularity: 0,
+            texture: new Texture("assets/text.png")
+        });
+
         for (let i = 0; i < 24; i++) {
             this.shapes.ground.arrays.texture_coord[i][0] *= 20 / 3;
             this.shapes.ground.arrays.texture_coord[i][1] *= 500;
@@ -181,6 +299,13 @@ export class Assignment3 extends Scene {
 
         // *** Materials
         this.materials = {
+
+            scorebox: new Material(new defs.Phong_Shader(),
+            {ambient: 0, diffusivity: .3, specularity: .1, color: color(.5, .5, .5, 1)}),
+
+            pausebox: new Material(new defs.Phong_Shader(),
+            {ambient: 0, diffusivity: 0, specularity: 0, color: color(.5, .5, .5, 1)}),
+
             test: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
             test2: new Material(new Gouraud_Shader(),
@@ -223,26 +348,29 @@ export class Assignment3 extends Scene {
             
         }
 
+        ////////////////
+        // GAME VARIABLES
+        ////////////////
+
         this.initial_camera_location = Mat4.look_at(vec3(0, 5, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
+        this.prospective_x = 0;
         this.player_x = 0;
         this.player_y = 0;
         this.player_z = 0;
-        
-        this.real_x = 0;
-        this.real_y = 0;
-        this.real_z = 0;
 
         this.y_vel = 0;
         this.y_accel = 0;
 
         this.down_pressed = false;
+        this.is_crouching = false;
 
         this.frames = 0;
 
         this.unpaused_time = 0;
         this.run_distance = 0;
         this.is_paused = false;
+        this.game_over = false;
 
         this.left_cooldown_time = 0;
         this.right_cooldown_time = 0;
@@ -253,34 +381,61 @@ export class Assignment3 extends Scene {
     }
 
     jump() {
-        if (this.player_y == 0 && !this.is_paused)
+        if (this.player_y == 0 && !this.is_paused && !this.game_over)
             this.y_vel = 22.74;
     }
 
     shift_left() {
-        if (!this.is_paused && this.left_cooldown_time == 0) {
-            this.player_x  = Math.max(this.player_x - 10, -10);
+        if (!this.is_paused && !this.game_over && this.left_cooldown_time == 0) {
+            this.prospective_x  = Math.max(this.prospective_x - 10, -10);
             this.left_cooldown_time = 1/6;
             this.right_cooldown_time = 0;
         }
     }
 
     shift_right() {
-        if (!this.is_paused && this.right_cooldown_time == 0) {
-            this.player_x = Math.min(this.player_x + 10, 10);
+        if (!this.is_paused && !this.game_over && this.right_cooldown_time == 0) {
+            this.prospective_x = Math.min(this.prospective_x + 10, 10);
             this.left_cooldown_time = 0;
             this.right_cooldown_time = 1/6;
         }
     }
 
     begin_crouch() {
-        if (!this.is_paused)
-            this.down_pressed = true;
+        this.down_pressed = true;
     }
 
     end_crouch() {
-        if (!this.is_paused)
-            this.down_pressed = false;
+        this.down_pressed = false;
+    }
+
+    reset_game() {
+        this.initial_camera_location = Mat4.look_at(vec3(0, 5, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+
+        this.prospective_x = 0;
+        this.player_x = 0;
+        this.player_y = 0;
+        this.player_z = 0;
+
+        this.y_vel = 0;
+        this.y_accel = 0;
+
+        this.down_pressed = false;
+        this.is_crouching = false;
+
+        this.frames = 0;
+
+        this.unpaused_time = 0;
+        this.run_distance = 0;
+        this.is_paused = false;
+        this.game_over = false;
+
+        this.left_cooldown_time = 0;
+        this.right_cooldown_time = 0;
+
+        this.obstacles = [];
+
+        this.next_obstacle = 100;
     }
 
     make_control_panel() {
@@ -292,6 +447,12 @@ export class Assignment3 extends Scene {
         this.key_triggered_button("Crouch", ["ArrowDown"], () => this.begin_crouch(), '#6E6460', () => this.end_crouch());
         this.new_line();
         this.key_triggered_button("Pause", ["c"], () => this.is_paused = !this.is_paused);
+        this.key_triggered_button("Reset", ["x"], () => this.reset_game());
+        this.new_line();
+        this.new_line();
+        this.live_string(box => {
+            box.textContent = "You've ran " + Math.trunc(this.run_distance) + " feet through Andre's forces!";
+        });
     }
     /*
     key_triggered_button(description, shortcut_combination, callback, color = '#6E6460',
@@ -317,11 +478,40 @@ export class Assignment3 extends Scene {
 
         let delta_time_seconds = program_state.animation_delta_time / 1000;
 
-        if (this.is_paused) {
+        if (this.is_paused || this.game_over) {
             delta_time_seconds = 0;
         }
         
         this.unpaused_time += delta_time_seconds;
+
+/*
+        const score_box = Mat4.rotation(0, Math.cos(t), Math.sin(t), .7 * Math.cos(t));
+        this.shapes.cube.draw(context, program_state, score_box, this.grey);
+
+
+        let strings = ["This is some text", "More text", "1234567890", "This is a line.\n\n\n" + "This is another line.",
+            Math.trunc(t).toString(), Text_Line.toString()];
+
+        // Sample the "strings" array and draw them onto a cube.
+        for (let i = 0; i < 3; i++)
+            for (let j = 0; j < 2; j++) {             // Find the matrix for a basis located along one of the cube's sides:
+                let cube_side = Mat4.rotation(i == 0 ? Math.PI / 2 : 0, 1, 0, 0)
+                    .times(Mat4.rotation(Math.PI * j - (i == 1 ? Math.PI / 2 : 0), 0, 1, 0))
+                    .times(Mat4.translation(-.9, .9, 1.01));
+
+                const multi_line_string = strings[2 * i + j].split('\n');
+                // Draw a Text_String for every line in our string, up to 30 lines:
+                for (let line of multi_line_string.slice(0, 1)) {             // Assign the string to Text_String, and then draw it.
+                    this.shapes.text.set_string(line, context.context);
+                    this.shapes.text.draw(context, program_state, score_box.times(cube_side)
+                        .times(Mat4.scale(.4, .4, .03).times(Mat4.translation(1,-1,0))), this.text_image);
+                    // Move our basis down a line.
+                    cube_side.post_multiply(Mat4.translation(0, -.06, 0));
+                }
+            }
+*/ 
+
+
 
         // this.shapes.[XXX].draw([XXX]) // <--example
         //const light_position = vec4(0, 5, 5, 1);
@@ -336,7 +526,7 @@ export class Assignment3 extends Scene {
         
         */
         //this.member_model = Mat4.identity();
-        //this.member_model = this.member_model.times(Mat4.translation(this.player_x, this.player_y, this.player_z));
+        //this.member_model = this.member_model.times(Mat4.translation(this.prospective_x, this.player_y, this.player_z));
 
 
         
@@ -346,17 +536,17 @@ export class Assignment3 extends Scene {
         ///
         /// X axis movement
         ///
-        if(this.real_x < this.player_x)
+        if(this.player_x < this.prospective_x)
         {
-            let translation_distance = Math.min(this.real_x + delta_time_seconds * 60, this.player_x) - this.real_x;
+            let translation_distance = Math.min(this.player_x + delta_time_seconds * 60, this.prospective_x) - this.player_x;
             this.member_model = this.member_model.times(Mat4.translation(translation_distance, 0, 0));
-            this.real_x += translation_distance;
+            this.player_x += translation_distance;
         }
-        if(this.real_x > this.player_x)
+        if(this.player_x > this.prospective_x)
         {
-            let translation_distance = Math.max(this.real_x - delta_time_seconds * 60, this.player_x) - this.real_x;
+            let translation_distance = Math.max(this.player_x - delta_time_seconds * 60, this.prospective_x) - this.player_x;
             this.member_model = this.member_model.times(Mat4.translation(translation_distance, 0, 0));
-            this.real_x += translation_distance;
+            this.player_x += translation_distance;
         }
 
 
@@ -416,10 +606,11 @@ export class Assignment3 extends Scene {
         let current_speed = 19.57 + 0.10 * this.unpaused_time;
 
         let limb_rotation = Math.PI / 6 * Math.sin(this.unpaused_time * current_speed / 6.0 * Math.PI);
-        let is_crouching = this.down_pressed && (this.player_y == 0);
+        if (!this.is_paused && !this.game_over)
+            this.is_crouching = this.down_pressed && (this.player_y == 0);
 
         let player_head_mat = player_model_transform;
-        if (is_crouching) {
+        if (this.is_crouching) {
             player_head_mat = player_head_mat.times(Mat4.translation(0, -4.25, 0));
             player_head_mat = player_head_mat.times(Mat4.rotation(-1 * Math.PI / 2, 1, 0, 0));
             player_head_mat = player_head_mat.times(Mat4.translation(0, 4.25, 0));
@@ -429,7 +620,7 @@ export class Assignment3 extends Scene {
 
         let player_torso_mat = player_model_transform;
         player_torso_mat = player_torso_mat.times(Mat4.translation(0, -2.75, 0));
-        if (is_crouching) {
+        if (this.is_crouching) {
             player_torso_mat = player_torso_mat.times(Mat4.translation(0, -1.5, 0));
             player_torso_mat = player_torso_mat.times(Mat4.rotation(-1 * Math.PI / 2, 1, 0, 0));
             player_torso_mat = player_torso_mat.times(Mat4.translation(0, 1.5, 0));
@@ -439,14 +630,14 @@ export class Assignment3 extends Scene {
 
         let player_left_arm_mat = player_model_transform;
         player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(-1.5, -2.75, 0));
-        if (is_crouching) {
+        if (this.is_crouching) {
             player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(0, -1.5, 0));
             player_left_arm_mat = player_left_arm_mat.times(Mat4.rotation(-1 * Math.PI / 2, 1, 0, 0));
             player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(0, 1.5, 0));
         }
         player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(0.5, 1.5, 0));
         player_left_arm_mat = player_left_arm_mat.times(Mat4.rotation(Math.PI / 48.0 * (-1), 0, 0, 1));
-        if ((this.player_y == 0) && !is_crouching)
+        if ((this.player_y == 0) && !this.is_crouching)
             player_left_arm_mat = player_left_arm_mat.times(Mat4.rotation(limb_rotation, 1, 0, 0));
         player_left_arm_mat = player_left_arm_mat.times(Mat4.translation(-0.5, -1.5, 0));
         player_left_arm_mat = player_left_arm_mat.times(Mat4.scale(0.5, 1.5, 0.5));
@@ -454,14 +645,14 @@ export class Assignment3 extends Scene {
 
         let player_right_arm_mat = player_model_transform;
         player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(1.5, -2.75, 0));
-        if (is_crouching) {
+        if (this.is_crouching) {
             player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(0, -1.5, 0));
             player_right_arm_mat = player_right_arm_mat.times(Mat4.rotation(-1 * Math.PI / 2, 1, 0, 0));
             player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(0, 1.5, 0));
         }
         player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(-0.5, 1.5, 0));
         player_right_arm_mat = player_right_arm_mat.times(Mat4.rotation(Math.PI / 48.0, 0, 0, 1));
-        if ((this.player_y == 0) && !is_crouching)
+        if ((this.player_y == 0) && !this.is_crouching)
             player_right_arm_mat = player_right_arm_mat.times(Mat4.rotation(-1 * limb_rotation, 1, 0, 0));
         player_right_arm_mat = player_right_arm_mat.times(Mat4.translation(0.5, -1.5, 0));
         player_right_arm_mat = player_right_arm_mat.times(Mat4.scale(0.5, 1.5, 0.5));
@@ -553,12 +744,16 @@ export class Assignment3 extends Scene {
             this.next_obstacle += 24.0 + 24.0 * Math.random();
         }
 
-        
+                
+
         for (let i = 0; i < this.obstacles.length; i++) {
             let current_obstacle = this.obstacles[i];
             current_obstacle.advance(delta_time_seconds * current_speed);
+            if (current_obstacle.check_collision(this.player_x, this.player_y, this.player_z, this.is_crouching)) {
+                this.game_over = true;
+            }
             current_obstacle.draw(context, program_state);
-            if (current_obstacle.z > 80) {
+            if (current_obstacle.z > 40) {
                 this.obstacles.splice(i, 1);
                 i -= 1;
             }
@@ -586,6 +781,84 @@ export class Assignment3 extends Scene {
         model_transform = model_transform.times(Mat4.translation(3,0,0));
         this.shapes.sphere.draw(context, program_state, model_transform, this.materials.planet2e.override({color: red}));
         */
+
+
+        // SCORE BOX
+
+        let boxx = 20;
+        let boxy = .5;
+
+        const score_box = Mat4.translation(0,8,-5).times(Mat4.scale(boxx,boxy,1));
+        this.shapes.cube.draw(context, program_state, score_box, this.grey);
+
+        let diststring = Math.trunc(this.run_distance).toString();
+        let strings = ["", "", "", "",
+        "Score: " + diststring, ""];
+
+        // Sample the "strings" array and draw them onto a cube.
+        for (let i = 0; i < 3; i++)
+            for (let j = 0; j < 2; j++) {             // Find the matrix for a basis located along one of the cube's sides:
+                let cube_side = Mat4.rotation(i == 0 ? Math.PI / 2 : 0, 1, 0, 0)
+                    .times(Mat4.rotation(Math.PI * j - (i == 1 ? Math.PI / 2 : 0), 0, 1, 0))
+                    .times(Mat4.translation(-.9, .9, 1.01));
+
+                const multi_line_string = strings[2 * i + j].split('\n');
+                // Draw a Text_String for every line in our string, up to 30 lines:
+                for (let line of multi_line_string.slice(0, 30)) {             // Assign the string to Text_String, and then draw it.
+                    this.shapes.text.set_string(line, context.context);
+                    this.shapes.text.draw(context, program_state, score_box.times(cube_side)
+                        .times(Mat4.scale(.4/boxx, .4/boxy, .03).times(Mat4.translation(2*boxx-2,-1,0))), this.text_image);
+                    // Move our basis down a line.
+                    cube_side.post_multiply(Mat4.translation(0, -.06, 0));
+                }
+            }
+
+
+            // PAUSE BUTTON
+            if(this.is_paused || this.game_over)
+            {
+                let pause_boxx = 10;
+                let pause_boxy = .5;
+        
+                const pause_box = Mat4.translation(0,3,10).times(Mat4.scale(pause_boxx,pause_boxy,1));
+                this.shapes.cube.draw(context, program_state, pause_box, this.grey);
+        
+                let end_message = "Game Over";
+                let pause_message = "Paused";
+                let message = pause_message;
+                let message_shift = 1.4;
+                if(this.game_over)
+                    {
+                        message = end_message;
+                        message_shift = 3.7;
+                    }
+
+
+                let pause_strings = ["", "", "", "",
+                message, ""];
+        
+                // Sample the "strings" array and draw them onto a cube.
+                for (let i = 0; i < 3; i++)
+                    for (let j = 0; j < 2; j++) {             // Find the matrix for a basis located along one of the cube's sides:
+                        let cube_side = Mat4.rotation(i == 0 ? Math.PI / 2 : 0, 1, 0, 0)
+                            .times(Mat4.rotation(Math.PI * j - (i == 1 ? Math.PI / 2 : 0), 0, 1, 0))
+                            .times(Mat4.translation(-.9, .9, 1.01));
+        
+                        const multi_line_string2 = pause_strings[2 * i + j].split('\n');
+                        // Draw a Text_String for every line in our string, up to 30 lines:
+                        for (let line of multi_line_string2.slice(0, 30)) {             // Assign the string to Text_String, and then draw it.
+                            this.shapes.text.set_string(line, context.context);
+                            this.shapes.text.draw(context, program_state, pause_box.times(cube_side)
+                                .times(Mat4.scale(.4/pause_boxx, .4/pause_boxy, .03).times(Mat4.translation(2*pause_boxx-message_shift,-1,0))), this.text_image);
+                            // Move our basis down a line.
+                            cube_side.post_multiply(Mat4.translation(0, -.06, 0));
+                        }
+                    }
+            }
+
+
+
+
     }
 }
 
