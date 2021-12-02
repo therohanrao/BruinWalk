@@ -243,6 +243,10 @@ class Banner extends Obstacle {
 
     check_collision(p_x, p_y, p_z, p_crouch) {
         
+        if(p_crouch) {
+            return false;
+        }
+
         let head_center_y = p_y;
         let head_center_z = 0;
         let banner_center_y = this.y +this.height - 4.83;
