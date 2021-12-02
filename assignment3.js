@@ -560,6 +560,7 @@ export class Assignment3 extends Scene {
             current_obstacle.draw(context, program_state);
             if (current_obstacle.z > 80) {
                 this.obstacles.splice(i, 1);
+                i -= 1;
             }
         }
 
