@@ -1,5 +1,6 @@
 //
 // pog
+//
 import {defs, tiny} from './examples/common.js';
 
 const {
@@ -69,6 +70,32 @@ class Cloud {
         cloud_mat = cloud_mat.times(Mat4.translation(this.x, this.y, this.z));
         cloud_mat = cloud_mat.times(Mat4.scale(this.x_size, 0.05, this.z_size));
         this.scene.shapes.cloud.draw(context, program_state, cloud_mat, this.scene.materials.cloud.override({color: cloud_color}));
+    }
+}
+
+class UCLA_Flag {
+    constructor(x, y, z, scene) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.scene = scene;
+    }
+
+    advance(distance) {
+        this.z += distance;
+    }
+
+    draw(context, program_state) {
+        let flagpole_mat = Mat4.identity();
+        flagpole_mat = flagpole_mat.times(Mat4.translation(this.x, this.y + 2.75, this.z));
+        flagpole_mat = flagpole_mat.times(Mat4.scale(0.14, 10.0, 0.14));
+        this.scene.shapes.flagpole.draw(context, program_state, flagpole_mat, this.scene.materials.banner_leg);
+
+        let ucla_flag_mat = Mat4.identity();
+        ucla_flag_mat = ucla_flag_mat.times(Mat4.translation(this.x + 3.18, this.y + 10.75, this.z));
+        ucla_flag_mat = ucla_flag_mat.times(Mat4.scale(3.18, 2.0, 0.13));
+        this.scene.shapes.ucla_flag.draw(context, program_state, ucla_flag_mat, this.scene.materials.ucla_flag);
+
     }
 }
 
@@ -235,24 +262,6 @@ class Table extends Obstacle {
         table_leg_nw_mat = table_leg_nw_mat.times(Mat4.scale(0.14, 2.42, 0.14));
         this.scene.shapes.table_leg_nw.draw(context, program_state, table_leg_nw_mat, this.scene.materials.table);
     }
-     // PLAYER DIMENSIONS:
-        // Head: r = 1.25. center of the head is at the origin.
-        // Torso: x = 2, y = 3, z = 1
-        // Limbs: x = 1, y = 3, z = 1
-        // Mat4.scale(x/2, y/2, z/2), because each "unit" cube is 2x2x2
-    //hit box
-    //head
-    //player x: -1.25 < x < 1.25
-    //player y: -1.25 < y < 1.25
-    //player z: -1.25 < z < 1.25
-    //mid section
-    //player x: -2 < x < 2
-    //player y: -1.5 < y < 1.5
-    //player z: -0.5 < z < 0.5
-    //legs
-    //player x: -1 < x < 1
-    //player y: -1.5 < y < 1.5
-    //player z: -0.5 < z < 0.5
 
     //Table height: 0.14
     //standing center head to table top: 4.56
@@ -348,17 +357,6 @@ export class Assignment3 extends Scene {
             cube: new defs.Cube(), 
             text: new Text_Line(35),
             //end text box code
-            torus: new defs.Torus(15, 15),
-            torus2: new defs.Torus(3, 15),
-            sphere: new defs.Subdivision_Sphere(4),
-            circle: new defs.Regular_2D_Polygon(1, 15),
-            // TODO:  Fill in as many additional shape instances as needed in this key/value table.
-            //        (Requirement 1)
-            sphere1: new ( defs.Subdivision_Sphere.prototype.make_flat_shaded_version() )(1),
-            sphere2: new ( defs.Subdivision_Sphere.prototype.make_flat_shaded_version() )(2),
-            sphere3: new defs.Subdivision_Sphere(3),
-
-            sun: new defs.Subdivision_Sphere(4),
             
             player_head: new defs.Subdivision_Sphere(4),
             player_torso: new defs.Cube(),
@@ -389,6 +387,9 @@ export class Assignment3 extends Scene {
             banner_right_leg: new defs.Cube(),
 
             cloud: new defs.Cube(),
+
+            ucla_flag: new defs.Cube(),
+            flagpole: new defs.Cube(),
         };
 
         const phong = new defs.Phong_Shader();
@@ -420,12 +421,6 @@ export class Assignment3 extends Scene {
             pausebox: new Material(new defs.Phong_Shader(),
             {ambient: 0, diffusivity: 0, specularity: 0, color: color(.5, .5, .5, 1)}),
 
-            test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
-            test2: new Material(new Gouraud_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
-            ring: new Material(new Ring_Shader()),
-
             player: new Material(new defs.Phong_Shader(),
                 {ambient: 0.4, diffusivity: 0.6, color: hex_color("#2774AE")}),
 
@@ -440,9 +435,6 @@ export class Assignment3 extends Scene {
                 ambient: 1, diffusivity: 0.1, specularity: 0.1,
                 texture: new Texture("assets/grass.jpg", "NEAREST"),
             }),
-
-            off_track: new Material(new defs.Phong_Shader(),
-                {ambient: 1, diffusivity: 0.6, color: hex_color("#348C31")}),
 
             sky: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 0.6, color: hex_color("#40316A")}),
@@ -468,7 +460,12 @@ export class Assignment3 extends Scene {
             cloud: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 0.6, color: hex_color("#D8D7D3")}),
 
-            
+            ucla_flag: new Material(new defs.Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                texture: new Texture("assets/ucla.png", "NEAREST"),
+            }),
+
         }
 
         ////////////////
@@ -501,9 +498,11 @@ export class Assignment3 extends Scene {
 
         this.obstacles = [];
         this.clouds = [];
+        this.ucla_flags = [];
 
         this.next_obstacle = 100;
         this.next_cloud = 12;
+        this.next_flag = 200;
 
         this.just_reset_game = false;
     }
@@ -564,9 +563,11 @@ export class Assignment3 extends Scene {
 
         this.obstacles = [];
         this.clouds = [];
+        this.ucla_flags = [];
 
         this.next_obstacle = 100;
         this.next_cloud = 12;
+        this.next_flag = 200;
 
         this.just_reset_game = true;
     }
@@ -584,14 +585,9 @@ export class Assignment3 extends Scene {
         this.new_line();
         this.new_line();
         this.live_string(box => {
-            box.textContent = "You've ran " + Math.trunc(this.run_distance) + " feet through Andre's forces!";
+            box.textContent = "You've run " + Math.trunc(this.run_distance) + " feet through Andre's forces!";
         });
     }
-    /*
-    key_triggered_button(description, shortcut_combination, callback, color = '#6E6460',
-                                release_event, recipient = this, parent = this.control_panel)
-    */
-
 
     display(context, program_state) {
 
@@ -599,6 +595,10 @@ export class Assignment3 extends Scene {
 
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
+
+        ///////////////////
+        // SET CAMERA
+        ///////////////////
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
@@ -614,6 +614,10 @@ export class Assignment3 extends Scene {
             Math.PI / 4, context.width / context.height, .1, 1000);
 
 
+        /////////////////
+        // TIME STUFF
+        /////////////////
+
         let delta_time_seconds = program_state.animation_delta_time / 1000;
 
         if (this.is_paused || this.game_over) {
@@ -621,52 +625,6 @@ export class Assignment3 extends Scene {
         }
         
         this.unpaused_time += delta_time_seconds;
-
-/*
-        const score_box = Mat4.rotation(0, Math.cos(t), Math.sin(t), .7 * Math.cos(t));
-        this.shapes.cube.draw(context, program_state, score_box, this.grey);
-
-
-        let strings = ["This is some text", "More text", "1234567890", "This is a line.\n\n\n" + "This is another line.",
-            Math.trunc(t).toString(), Text_Line.toString()];
-
-        // Sample the "strings" array and draw them onto a cube.
-        for (let i = 0; i < 3; i++)
-            for (let j = 0; j < 2; j++) {             // Find the matrix for a basis located along one of the cube's sides:
-                let cube_side = Mat4.rotation(i == 0 ? Math.PI / 2 : 0, 1, 0, 0)
-                    .times(Mat4.rotation(Math.PI * j - (i == 1 ? Math.PI / 2 : 0), 0, 1, 0))
-                    .times(Mat4.translation(-.9, .9, 1.01));
-
-                const multi_line_string = strings[2 * i + j].split('\n');
-                // Draw a Text_String for every line in our string, up to 30 lines:
-                for (let line of multi_line_string.slice(0, 1)) {             // Assign the string to Text_String, and then draw it.
-                    this.shapes.text.set_string(line, context.context);
-                    this.shapes.text.draw(context, program_state, score_box.times(cube_side)
-                        .times(Mat4.scale(.4, .4, .03).times(Mat4.translation(1,-1,0))), this.text_image);
-                    // Move our basis down a line.
-                    cube_side.post_multiply(Mat4.translation(0, -.06, 0));
-                }
-            }
-*/ 
-
-
-
-        // this.shapes.[XXX].draw([XXX]) // <--example
-        //const light_position = vec4(0, 5, 5, 1);
-        // The parameters of the Light are: position, color, size
-        //program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
-        
-        // model_transform = model_transform.times(Mat4.rotation(angle,0,0,1)); // rotates around x,y,z ax
-
-        // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
-        // const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-        /*
-        
-        */
-        //this.member_model = Mat4.identity();
-        //this.member_model = this.member_model.times(Mat4.translation(this.prospective_x, this.player_y, this.player_z));
-
-
         
         this.left_cooldown_time = Math.max(this.left_cooldown_time - delta_time_seconds, 0);
         this.right_cooldown_time = Math.max(this.right_cooldown_time - delta_time_seconds, 0);
@@ -711,7 +669,9 @@ export class Assignment3 extends Scene {
         this.y_vel = this.y_vel + this.y_accel * delta_time_seconds;
 
         
-
+        ////////////////////////////////////////////
+        // SET UP TRANSFORM MATRICES AND LIGHT
+        ////////////////////////////////////////////
         
         let object_model_transform = Mat4.identity();
 
@@ -720,32 +680,16 @@ export class Assignment3 extends Scene {
         const light_position = vec4(0, 0, 10, 1);
         const white = color(1,1,1,1);
         program_state.lights = [new Light(light_position, white, 1000)];
-        // Rohans Testing stuff:
-        //
-        // model_transform = model_transform.times(Mat4.rotation(angle,0,0,1)); // rotates around x,y,z ax
-        // model_transform = model_transform.times(Mat4.translation(-delx,dely,0));
-      
-        // PLAYER DIMENSIONS:
-        // Head: r = 1.25. center of the head is at the origin.
-        // Torso: x = 2, y = 3, z = 1
-        // Limbs: x = 1, y = 3, z = 1
-        // Mat4.scale(x/2, y/2, z/2), because each "unit" cube is 2x2x2
-        
-
-        this.frames += 1;
-
-        if(this.unpaused_time % 2 < 1)
-        {
-            this.frames/=2
-            console.log("Frames Per Second: " + this.frames);
-            this.frames = 0;
-        }
 
         let current_speed = 19.57 + 0.10 * this.unpaused_time;
 
         let limb_rotation = Math.PI / 6 * Math.sin(this.unpaused_time * current_speed / 6.0 * Math.PI);
         if (!this.is_paused && !this.game_over)
             this.is_crouching = this.down_pressed && (this.player_y == 0);
+
+        ////////////////////
+        // DRAW PLAYER
+        ////////////////////
 
         let player_head_mat = player_model_transform;
         if (this.is_crouching) {
@@ -814,9 +758,16 @@ export class Assignment3 extends Scene {
         player_right_leg_mat = player_right_leg_mat.times(Mat4.scale(0.5, 1.5, 0.5));
         this.shapes.player_right_leg.draw(context, program_state, player_right_leg_mat, this.materials.player);
 
+
+
+
         object_model_transform = object_model_transform.times(Mat4.translation(10, 1, -10));
         this.shapes.player_head.draw(context, program_state, object_model_transform, this.materials.player.override({color: hex_color("FF0000")}));
 
+
+        //////////////////////
+        // DRAW BACKGROUND
+        //////////////////////
 
         let sky_transform = Mat4.identity();
         sky_transform = sky_transform.times(Mat4.scale(510, 80, 750));
@@ -855,6 +806,21 @@ export class Assignment3 extends Scene {
         // SPAWN SCENERY
         //////////////////
 
+        while (this.next_flag < this.run_distance + 750) {
+            this.ucla_flags.push(new UCLA_Flag(22, 0, this.run_distance - this.next_flag, this));
+            this.next_flag += 200.0;
+        }
+
+        for (let i = 0; i < this.ucla_flags.length; i++) {
+            let current_flag = this.ucla_flags[i];
+            current_flag.advance(frame_distance);
+            current_flag.draw(context, program_state);
+            if (current_flag.z > 40) {
+                this.ucla_flags.splice(i, 1);
+                i -= 1;
+            }
+        }
+
         while (this.next_cloud < this.run_distance / 2.0 + 750) {
             let cloud_x = Math.random() * 1020.0 - 510.0;
             let cloud_x_size = Math.random() * 36.0 + 18.0;
@@ -875,7 +841,6 @@ export class Assignment3 extends Scene {
                 this.clouds.splice(i, 1);
                 i -= 1;
             }
-            
         }
 
         ///////////////////
@@ -916,7 +881,7 @@ export class Assignment3 extends Scene {
                     this.obstacles.push(new Banner(0, 0, this.run_distance - this.next_obstacle, this, banner_height));
                     break;
             }
-            console.log(this.next_obstacle);
+            //console.log(this.next_obstacle);
             this.next_obstacle += 24.0 + 24.0 * Math.random();
         }
 
@@ -936,31 +901,10 @@ export class Assignment3 extends Scene {
             }
         }
 
-        /*
-        if(this.attached)
-        {
-            const desired = Mat4.inverse(this.attached().times(Mat4.translation(0, 0, 10)));
-            const blending_factor = .05;
-            const cur_view = desired.map((x, i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor));
-
-            program_state.set_camera(cur_view);
-
-        }
         
-        */
-        /*
-        model_transform = model_transform.times(Mat4.translation(3,0,0));
-        if(t %2 <1)
-            this.shapes.sphere.draw(context, program_state, model_transform, this.materials.planet2o.override({color: red}));
-        else
-            this.shapes.sphere.draw(context, program_state, model_transform, this.materials.planet2e.override({color: red}));
-
-        model_transform = model_transform.times(Mat4.translation(3,0,0));
-        this.shapes.sphere.draw(context, program_state, model_transform, this.materials.planet2e.override({color: red}));
-        */
-
-
+        //////////////////////////
         // SCORE BOX
+        //////////////////////////
 
         let boxx = 20;
         let boxy = .5;
@@ -1039,214 +983,8 @@ export class Assignment3 extends Scene {
     }
 }
 
-
-
-class Gouraud_Shader extends Shader {
-    // This is a Shader using Phong_Shader as template
-    // TODO: Modify the glsl code here to create a Gouraud Shader (Planet 2)
-
-    constructor(num_lights = 2) {
-        super();
-        this.num_lights = num_lights;
-    }
-
-    shared_glsl_code() {
-        // ********* SHARED CODE, INCLUDED IN BOTH SHADERS *********
-        return ` 
-        precision mediump float;
-        const int N_LIGHTS = ` + this.num_lights + `;
-        uniform float ambient, diffusivity, specularity, smoothness;
-        uniform vec4 light_positions_or_vectors[N_LIGHTS], light_colors[N_LIGHTS];
-        uniform float light_attenuation_factors[N_LIGHTS];
-        uniform vec4 shape_color;
-        uniform vec3 squared_scale, camera_center;
-
-        // Specifier "varying" means a variable's final value will be passed from the vertex shader
-        // on to the next phase (fragment shader), then interpolated per-fragment, weighted by the
-        // pixel fragment's proximity to each of the 3 vertices (barycentric interpolation).
-        varying vec3 N, vertex_worldspace;
-
-        varying vec4 VERTEX_COLOR;
-        // ***** PHONG SHADING HAPPENS HERE: *****                                       
-        vec3 phong_model_lights( vec3 N, vec3 vertex_worldspace ){                                        
-            // phong_model_lights():  Add up the lights' contributions.
-            vec3 E = normalize( camera_center - vertex_worldspace );
-            vec3 result = vec3( 0.0 );
-            for(int i = 0; i < N_LIGHTS; i++){
-                // Lights store homogeneous coords - either a position or vector.  If w is 0, the 
-                // light will appear directional (uniform direction from all points), and we 
-                // simply obtain a vector towards the light by directly using the stored value.
-                // Otherwise if w is 1 it will appear as a point light -- compute the vector to 
-                // the point light's location from the current surface point.  In either case, 
-                // fade (attenuate) the light as the vector needed to reach it gets longer.  
-                vec3 surface_to_light_vector = light_positions_or_vectors[i].xyz - 
-                                               light_positions_or_vectors[i].w * vertex_worldspace;                                             
-                float distance_to_light = length( surface_to_light_vector );
-
-                vec3 L = normalize( surface_to_light_vector );
-                vec3 H = normalize( L + E );
-                // Compute the diffuse and specular components from the Phong
-                // Reflection Model, using Blinn's "halfway vector" method:
-                float diffuse  =      max( dot( N, L ), 0.0 );
-                float specular = pow( max( dot( N, H ), 0.0 ), smoothness );
-                float attenuation = 1.0 / (1.0 + light_attenuation_factors[i] * distance_to_light * distance_to_light );
-                
-                vec3 light_contribution = shape_color.xyz * light_colors[i].xyz * diffusivity * diffuse
-                                                          + light_colors[i].xyz * specularity * specular;
-                result += attenuation * light_contribution;
-            }
-            return result;
-        } `;
-    }
-
-    vertex_glsl_code() {
-        // ********* VERTEX SHADER *********
-        return this.shared_glsl_code() + `
-            attribute vec3 position, normal;                            
-            // Position is expressed in object coordinates.
-            
-            uniform mat4 model_transform;
-            uniform mat4 projection_camera_model_transform;
-    
-            void main(){                                                                   
-                // The vertex's final resting place (in NDCS):
-                gl_Position = projection_camera_model_transform * vec4( position, 1.0 );
-                // The final normal vector in screen space.
-                N = normalize( mat3( model_transform ) * normal / squared_scale);
-                vertex_worldspace = ( model_transform * vec4( position, 1.0 ) ).xyz;
-                
-                vec4 color = vec4( shape_color.xyz * ambient, shape_color.w );
-                color.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
-                VERTEX_COLOR = color;
-            } `;
-    }
-
-    fragment_glsl_code() {
-        // ********* FRAGMENT SHADER *********
-        // A fragment is a pixel that's overlapped by the current triangle.
-        // Fragments affect the final image or get discarded due to depth.
-        return this.shared_glsl_code() + `
-            void main(){                                                           
-                // Compute an initial (ambient) color:
-                //gl_FragColor = vec4( shape_color.xyz * ambient, shape_color.w );
-                // Compute the final color with contributions from lights:
-                //gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
-                gl_FragColor = VERTEX_COLOR;
-            } `;
-    }
-
-    send_material(gl, gpu, material) {
-        // send_material(): Send the desired shape-wide material qualities to the
-        // graphics card, where they will tweak the Phong lighting formula.
-        gl.uniform4fv(gpu.shape_color, material.color);
-        gl.uniform1f(gpu.ambient, material.ambient);
-        gl.uniform1f(gpu.diffusivity, material.diffusivity);
-        gl.uniform1f(gpu.specularity, material.specularity);
-        gl.uniform1f(gpu.smoothness, material.smoothness);
-    }
-
-    send_gpu_state(gl, gpu, gpu_state, model_transform) {
-        // send_gpu_state():  Send the state of our whole drawing context to the GPU.
-        const O = vec4(0, 0, 0, 1), camera_center = gpu_state.camera_transform.times(O).to3();
-        gl.uniform3fv(gpu.camera_center, camera_center);
-        // Use the squared scale trick from "Eric's blog" instead of inverse transpose matrix:
-        const squared_scale = model_transform.reduce(
-            (acc, r) => {
-                return acc.plus(vec4(...r).times_pairwise(r))
-            }, vec4(0, 0, 0, 0)).to3();
-        gl.uniform3fv(gpu.squared_scale, squared_scale);
-        // Send the current matrices to the shader.  Go ahead and pre-compute
-        // the products we'll need of the of the three special matrices and just
-        // cache and send those.  They will be the same throughout this draw
-        // call, and thus across each instance of the vertex shader.
-        // Transpose them since the GPU expects matrices as column-major arrays.
-        const PCM = gpu_state.projection_transform.times(gpu_state.camera_inverse).times(model_transform);
-        gl.uniformMatrix4fv(gpu.model_transform, false, Matrix.flatten_2D_to_1D(model_transform.transposed()));
-        gl.uniformMatrix4fv(gpu.projection_camera_model_transform, false, Matrix.flatten_2D_to_1D(PCM.transposed()));
-
-        // Omitting lights will show only the material color, scaled by the ambient term:
-        if (!gpu_state.lights.length)
-            return;
-
-        const light_positions_flattened = [], light_colors_flattened = [];
-        for (let i = 0; i < 4 * gpu_state.lights.length; i++) {
-            light_positions_flattened.push(gpu_state.lights[Math.floor(i / 4)].position[i % 4]);
-            light_colors_flattened.push(gpu_state.lights[Math.floor(i / 4)].color[i % 4]);
-        }
-        gl.uniform4fv(gpu.light_positions_or_vectors, light_positions_flattened);
-        gl.uniform4fv(gpu.light_colors, light_colors_flattened);
-        gl.uniform1fv(gpu.light_attenuation_factors, gpu_state.lights.map(l => l.attenuation));
-    }
-
-    update_GPU(context, gpu_addresses, gpu_state, model_transform, material) {
-        // update_GPU(): Define how to synchronize our JavaScript's variables to the GPU's.  This is where the shader
-        // recieves ALL of its inputs.  Every value the GPU wants is divided into two categories:  Values that belong
-        // to individual objects being drawn (which we call "Material") and values belonging to the whole scene or
-        // program (which we call the "Program_State").  Send both a material and a program state to the shaders
-        // within this function, one data field at a time, to fully initialize the shader for a draw.
-
-        // Fill in any missing fields in the Material object with custom defaults for this shader:
-        const defaults = {color: color(0, 0, 0, 1), ambient: 0, diffusivity: 1, specularity: 1, smoothness: 40};
-        material = Object.assign({}, defaults, material);
-
-        this.send_material(context, gpu_addresses, material);
-        this.send_gpu_state(context, gpu_addresses, gpu_state, model_transform);
-    }
-}
-
-class Ring_Shader extends Shader {
-    update_GPU(context, gpu_addresses, graphics_state, model_transform, material) {
-        // update_GPU():  Defining how to synchronize our JavaScript's variables to the GPU's:
-        const [P, C, M] = [graphics_state.projection_transform, graphics_state.camera_inverse, model_transform],
-            PCM = P.times(C).times(M);
-        context.uniformMatrix4fv(gpu_addresses.model_transform, false, Matrix.flatten_2D_to_1D(model_transform.transposed()));
-        context.uniformMatrix4fv(gpu_addresses.projection_camera_model_transform, false,
-            Matrix.flatten_2D_to_1D(PCM.transposed()));
-    }
-
-
-
-    shared_glsl_code() {
-        // ********* SHARED CODE, INCLUDED IN BOTH SHADERS *********
-        return `
-        precision mediump float;
-        varying vec4 point_position;
-        varying vec4 center;
-        varying vec4 vertex_color;
-        uniform vec3 squared_scale;
-        `;
-    }
-
-    vertex_glsl_code() {
-        // ********* VERTEX SHADER *********
-        // TODO:  Complete the main function of the vertex shader (Extra Credit Part II).
-        return this.shared_glsl_code() + `
-        attribute vec3 position, normal;
-        uniform mat4 model_transform;
-        uniform mat4 projection_camera_model_transform;
-        
-        void main(){
-            //the vertex's final resting place (in NDCS)
-          //gl_Position = projection_camera_model_transform * vec4( position, 1.0);
-          //vec3 normal_worldspace = normalize(mat3( model_transform) * normal / squared_scale);
-          //vec3 vertex_worldspace = (model_transform * vec4(position, 1.0)).xyz;
-          //vertex_color = color_based_on_normal(normal_worldspace, vertex_worldspace);
-
-        }`;
-    }
-
-    fragment_glsl_code() {
-        // ********* FRAGMENT SHADER *********
-        // TODO:  Complete the main function of the fragment shader (Extra Credit Part II).
-        return this.shared_glsl_code() + `
-        void main(){
-          gl_FragColor = vec4( vertex_color.xyz, 1.0);
-        }`;
-    }
-}
-
 class Texture_Rotate extends Textured_Phong {
-    // TODO:  Modify the shader below (right now it's just the same fragment shader as Textured_Phong) for requirement #7.
+    // GROUND SHADER
     fragment_glsl_code() {
         return this.shared_glsl_code() + `
             varying vec2 f_tex_coord;
