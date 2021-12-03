@@ -320,8 +320,16 @@ class Banner extends Obstacle {
         let head_center_z = p_z;
         let banner_center_y = this.y +this.height - 4.83;
         let banner_center_z = this.z;
+        
+        // CHECK HEAD COLLISION
+        if (Math.abs(head_center_y - banner_center_y) <= (1.0+2.42) && Math.abs(head_center_z - banner_center_z) <= (1.0+0.13)) {
+            return true;
+        }
 
-        if (Math.abs(head_center_y - banner_center_y) <= (1.25+2.42) && Math.abs(head_center_z - banner_center_z) <= (1.25+0.13)) {
+        // CHECK TORSO COLLISION
+        let torso_center_y = p_y - 2.75;
+        let torso_center_z = p_z;
+        if (Math.abs(torso_center_y - banner_center_y) <= (1.5+2.42) && Math.abs(torso_center_z - banner_center_z) <= (0.5+0.13)) {
             return true;
         }
         
