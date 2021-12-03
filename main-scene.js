@@ -7,7 +7,7 @@ import {Scene_To_Texture_Demo} from "./examples/scene-to-texture-demo.js"
 import {Surfaces_Demo} from "./examples/surfaces-demo.js"
 import {Text_Demo} from "./examples/text-demo.js"
 import {Transforms_Sandbox} from "./examples/transforms-sandbox.js"
-import {Assignment3} from "./assignment3.js";
+import {BruinWalk} from "./bruinwalk.js";
 
 //bruinwalk edits:
 
@@ -36,14 +36,14 @@ Object.assign(defs,
     {Surfaces_Demo},
     {Text_Demo},
     {Transforms_Sandbox},
-    {Assignment3}
+    {BruinWalk}
 );
 
 // ******************** End extra step
 
 // (Can define Main_Scene's class here)
 
-const Main_Scene = Assignment3;
+const Main_Scene = BruinWalk;
 const Additional_Scenes = [];
 
 export {Main_Scene, Additional_Scenes, Canvas_Widget, Code_Widget, Text_Widget, defs}
