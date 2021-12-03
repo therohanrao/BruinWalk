@@ -1,6 +1,10 @@
-[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-f059dc9a6f8d3a56e377f745f24479a46679e63a5d9fe6f495e02850cd0d8118.svg)](https://classroom.github.com/online_ide?assignment_repo_id=6295136&assignment_repo_type=AssignmentRepo)
-# Assignment #3
+BruinWalk
+CS174 Final Project by Lap Doan, Jacob Lemoff, and Rohan Rao
 
-Example README for BruinWalk
+An endless runner game where the player must avoid tables, banners, and Andres.
 
-Test message from Lap Doan
+Use the arrow keys to shift lanes/jump/crouch, c to pause, and x to reset.
+
+Technical features include physics-based movement, dynamic object instantiation, and collision detection.
+
+Rest in peace holy red ball of testing 2021-2021
