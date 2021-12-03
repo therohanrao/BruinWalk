@@ -1,4 +1,4 @@
-#BruinWalk
+BruinWalk
 
 CS174 Final Project by Lap Doan, Jacob Lemoff, and Rohan Rao
 
