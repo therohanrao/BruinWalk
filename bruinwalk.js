@@ -672,8 +672,6 @@ export class BruinWalk extends Scene {
         ////////////////////////////////////////////
         // SET UP TRANSFORM MATRICES AND LIGHT
         ////////////////////////////////////////////
-        
-        let object_model_transform = Mat4.identity();
 
         let player_model_transform = this.member_model;
 
@@ -757,12 +755,6 @@ export class BruinWalk extends Scene {
         player_right_leg_mat = player_right_leg_mat.times(Mat4.translation(0.5, -1.5, 0));
         player_right_leg_mat = player_right_leg_mat.times(Mat4.scale(0.5, 1.5, 0.5));
         this.shapes.player_right_leg.draw(context, program_state, player_right_leg_mat, this.materials.player);
-
-
-
-
-        object_model_transform = object_model_transform.times(Mat4.translation(10, 1, -10));
-        this.shapes.player_head.draw(context, program_state, object_model_transform, this.materials.player.override({color: hex_color("FF0000")}));
 
 
         //////////////////////
