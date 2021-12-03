@@ -1,4 +1,5 @@
-BruinWalk
+#BruinWalk
+
 CS174 Final Project by Lap Doan, Jacob Lemoff, and Rohan Rao
 
 An endless runner game where the player must avoid tables, banners, and Andres.
